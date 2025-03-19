@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { StatusBar, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import HomeScreen from './src/screens/HomeScreen';
@@ -12,13 +12,13 @@ import InfoScreen from './src/screens/InfoScreen';
 import LoginScreen from './src/screens/LoginScreen';
 import SignupScreen from './src/screens/SignupScreen';
 
-const Stack = createNativeStackNavigator();
+const Tab = createBottomTabNavigator();
 
 export default function App() {
 	return (
 		<NavigationContainer>
 			<StatusBar barStyle="default" />
-			<Stack.Navigator
+			<Tab.Navigator
 				initialRouteName="Home"
 				screenOptions={({ route, navigation }) => ({
 					headerStyle: {
@@ -52,15 +52,13 @@ export default function App() {
 					),
 				})}
 			>
-				<Stack.Screen name="Home" component={HomeScreen} />
-				<Stack.Screen name="Forum" component={ForumScreen} />
-				<Stack.Screen name="Info" component={InfoScreen} />
-				<Stack.Screen name="Profile" component={ProfileScreen} />
-				<Stack.Screen name="Reviews" component={ReviewsScreen} />
-				<Stack.Screen name="Search" component={SearchScreen} />
-				<Stack.Screen name="Login" component={LoginScreen} />
-				<Stack.Screen name="Signup" component={SignupScreen} />
-			</Stack.Navigator>
+				<Tab.Screen name="Home" component={HomeScreen} />
+				<Tab.Screen name="Forum" component={ForumScreen} />
+				<Tab.Screen name="Info" component={InfoScreen} />
+				<Tab.Screen name="Reviews" component={ReviewsScreen} />
+				<Tab.Screen name="Search" component={SearchScreen} />
+				<Tab.Screen name="Profile" component={ProfileScreen} />
+			</Tab.Navigator>
 		</NavigationContainer>
 	);
 }
