@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, PermissionsAndroid, Platform } from 'react-native';
 import { Searchbar, Chip, Card, Title, Paragraph, Button } from 'react-native-paper';
 import MapView, { Marker } from 'react-native-maps';
 import Background from '../components/Background';
 import Constants from 'expo-constants';
+import * as Location from 'expo-location';
 
 const SearchScreen = ({ navigation }) => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -17,18 +18,36 @@ const SearchScreen = ({ navigation }) => {
     longitudeDelta: 0.01,
   });
 
-  // Ladataan API-avain Expo Constantsista (määritelty app.config.js:n extra-kentässä)
-  const GOOGLE_PLACES_API_KEY = Constants.expoConfig?.extra?.googlePlacesApiKey;
+// Load API key from app.config.js
+const GOOGLE_PLACES_API_KEY = Constants.expoConfig?.extra?.googlePlacesApiKey;
+
+useEffect(() => {
+  (async () => {
+    let { status } = await Location.requestForegroundPermissionsAsync();
+    if (status !== 'granted') {
+      setErrorMsg('Permission to access location was denied');
+      return;
+    }
+
+    let location = await Location.getCurrentPositionAsync({});
+    setRegion({
+      latitude: location.coords.latitude,
+      longitude: location.coords.longitude,
+      latitudeDelta: 0.01,
+      longitudeDelta: 0.01,
+    });
+  })();
+}, []);
 
   const fetchRestaurants = async (query, category, lat, lng) => {
     let keyword = query.trim() || "restaurant";
-    // Jos hakutermi ei sisällä sanaa "restaurant", lisätään se
+    // If the keyword does not contain "restaurant", add it
     if (!keyword.toLowerCase().includes("restaurant")) {
       keyword = `${keyword} restaurant`;
     }
-    // Haetaan Oulun alueelta 5000 metrin säteellä
-    const url = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(keyword)}&location=65.0121,25.4651&radius=5000&key=${GOOGLE_PLACES_API_KEY}`;
-    
+    // Fetch radius 5km
+    const url = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(keyword)}&location=${lat},${lng}&radius=5000&key=${GOOGLE_PLACES_API_KEY}`;
+        
     try {
       const response = await fetch(url);
       const data = await response.json();
@@ -72,9 +91,9 @@ const SearchScreen = ({ navigation }) => {
     }
   };
 
-  // Haetaan uudet ravintolat vasta kun "Hae" -nappia painetaan
+  // Fetch restaurants only on button press
   const onPressSearch = () => {
-    fetchRestaurants(searchQuery, selectedCategory);
+    fetchRestaurants(searchQuery, selectedCategory, region.latitude, region.longitude);
   };
 
   const handleCategoryPress = async (category) => {
@@ -100,15 +119,14 @@ const SearchScreen = ({ navigation }) => {
         );
       }
     } else {
-      fetchRestaurants(searchQuery, category);
+      fetchRestaurants(searchQuery, category, region.latitude, region.longitude);
     }
   };
 
   return (
     <Background>
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
         <View style={styles.container}>
-          {/* Yläosa: Hakukenttä, kategoriat ja haku-nappi */}
+          {/* Top: SearchField, chips and search-button */}
           <Searchbar
             placeholder="Hae ravintolaa..."
             onChangeText={setSearchQuery}
@@ -128,10 +146,10 @@ const SearchScreen = ({ navigation }) => {
             ))}
           </View>
           <Button mode="contained" onPress={onPressSearch} style={styles.searchButton}>
-            Hae
+            Search
           </Button>
 
-          {/* Keskiosa: Ravintolalistaus, oma scrollview, jotta vain lista scrollataan */}
+          {/* Middle: RestaurantsList ScrollView */}
           <View style={styles.restaurantListContainer}>
             <ScrollView contentContainerStyle={styles.listContainer}>
               {errorMsg ? (
@@ -147,17 +165,18 @@ const SearchScreen = ({ navigation }) => {
                   </Card>
                 ))
               ) : (
-                <Text style={styles.listItemText}>Ei ravintoloita löytynyt.</Text>
+                <Text style={styles.listItemText}>No restaurants found.</Text>
               )}
             </ScrollView>
           </View>
 
-          {/* Alaosa: Kartta, joka pysyy kiinteänä */}
+          {/* Bottom: Static map */}
           <View style={styles.mapContainer}>
             <MapView
               style={styles.map}
               region={region}
               onRegionChangeComplete={setRegion}
+              showsUserLocation={true}
             >
               {restaurants.map((restaurant) => (
                 <Marker
@@ -173,19 +192,20 @@ const SearchScreen = ({ navigation }) => {
             </MapView>
           </View>
         </View>
-      </ScrollView>
     </Background>
   );
 };
 
 const styles = StyleSheet.create({
   scrollContainer: {
-    paddingTop: 80,   // Tilaa yläbarille
-    paddingBottom: 80, // Tilaa ala-barille
+    paddingTop: 80,
+    paddingBottom: 80,
   },
   container: {
     flex: 1,
     paddingHorizontal: 16,
+    paddingTop: 100,
+    paddingBottom: 80,
   },
   searchbar: {
     marginBottom: 8,
@@ -203,7 +223,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   restaurantListContainer: {
-    height: 250, // Kiinteä korkeus ravintolalistan alueelle, jossa lista scrollataan
+    height: 250, 
     marginBottom: 16,
   },
   listContainer: {
