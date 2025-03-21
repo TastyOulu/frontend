@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, PermissionsAndroid, Platform, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, PermissionsAndroid, Platform } from 'react-native';
 import { Searchbar, Chip, Card, Title, Paragraph, Button } from 'react-native-paper';
 import MapView, { Marker } from 'react-native-maps';
 import Background from '../components/Background';
 import Constants from 'expo-constants';
+import * as Location from 'expo-location';
 
 const SearchScreen = ({ navigation }) => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -17,31 +18,55 @@ const SearchScreen = ({ navigation }) => {
     longitudeDelta: 0.01,
   });
 
-  const GOOGLE_PLACES_API_KEY = Constants.expoConfig?.extra?.googlePlacesApiKey;
+// Load API key from app.config.js
+const GOOGLE_PLACES_API_KEY = Constants.expoConfig?.extra?.googlePlacesApiKey;
 
-  useEffect(() => {
-    const getUserLocation = async () => {
-      const hasPermission = await requestLocationPermission();
-      if (hasPermission) {
-        navigator.geolocation.getCurrentPosition(
-          (position) => {
-            const { latitude, longitude } = position.coords;
-            setRegion({
-              latitude,
-              longitude,
-              latitudeDelta: 0.01,
-              longitudeDelta: 0.01,
-            });
-          },
-          (error) => {
-            setErrorMsg("Sijainnin haku epäonnistui.");
-          },
-          { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
-        );
+useEffect(() => {
+  (async () => {
+    let { status } = await Location.requestForegroundPermissionsAsync();
+    if (status !== 'granted') {
+      setErrorMsg('Permission to access location was denied');
+      return;
+    }
+
+    let location = await Location.getCurrentPositionAsync({});
+    setRegion({
+      latitude: location.coords.latitude,
+      longitude: location.coords.longitude,
+      latitudeDelta: 0.01,
+      longitudeDelta: 0.01,
+    });
+  })();
+}, []);
+
+  const fetchRestaurants = async (query, category, lat, lng) => {
+    let keyword = query.trim() || "restaurant";
+    // If the keyword does not contain "restaurant", add it
+    if (!keyword.toLowerCase().includes("restaurant")) {
+      keyword = `${keyword} restaurant`;
+    }
+    // Fetch radius 5km
+    const url = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(keyword)}&location=${lat},${lng}&radius=5000&key=${GOOGLE_PLACES_API_KEY}`;
+        
+    try {
+      const response = await fetch(url);
+      const data = await response.json();
+      console.log("API Response:", data);
+      if (data.error_message) {
+        setErrorMsg(data.error_message);
+        setRestaurants([]);
+      } else if (data.results) {
+        setRestaurants(data.results);
+        setErrorMsg(null);
+      } else {
+        setRestaurants([]);
       }
-    };
-    getUserLocation();
-  }, []);
+    } catch (error) {
+      console.error("Error fetching restaurants:", error);
+      setErrorMsg("Error fetching restaurants.");
+      setRestaurants([]);
+    }
+  };
 
   const requestLocationPermission = async () => {
     if (Platform.OS === 'android') {
@@ -49,10 +74,10 @@ const SearchScreen = ({ navigation }) => {
         const granted = await PermissionsAndroid.request(
           PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
           {
-            title: "Sijaintilupa",
-            message: "Sovellus tarvitsee sijaintisi näyttääkseen kartalla lähellä olevat ravintolat.",
-            buttonNeutral: "Kysy myöhemmin",
-            buttonNegative: "Peruuta",
+            title: "Location Permission",
+            message: "This app needs access to your location to show your position on the map.",
+            buttonNeutral: "Ask Me Later",
+            buttonNegative: "Cancel",
             buttonPositive: "OK"
           }
         );
@@ -66,47 +91,9 @@ const SearchScreen = ({ navigation }) => {
     }
   };
 
-  const fetchRestaurants = async (query, category, lat, lng) => {
-    let keyword = query.trim() || "restaurant";
-    if (
-      !keyword.toLowerCase().includes("restaurant") &&
-      !keyword.toLowerCase().includes("cafe") &&
-      !keyword.toLowerCase().includes("kahvila")
-    ) {
-      keyword = `${keyword} restaurant`;
-    }
-
-    if (!keyword.toLowerCase().includes("oulu")) {
-      keyword = `${keyword} in Oulu`;
-    }
-    const locationLat = lat || region.latitude;
-    const locationLng = lng || region.longitude;
-    const url = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(keyword)}&location=${locationLat},${locationLng}&radius=5000&key=${GOOGLE_PLACES_API_KEY}`;
-    
-    try {
-      const response = await fetch(url);
-      const data = await response.json();
-      if (data.error_message) {
-        setErrorMsg(data.error_message);
-        setRestaurants([]);
-      } else if (data.results) {
-        const filteredResults = data.results.filter(item => 
-          item.types &&
-          (item.types.includes("restaurant") || item.types.includes("cafe"))
-        );
-        setRestaurants(filteredResults);
-        setErrorMsg(null);
-      } else {
-        setRestaurants([]);
-      }
-    } catch (error) {
-      setErrorMsg("Error fetching restaurants.");
-      setRestaurants([]);
-    }
-  };
-
+  // Fetch restaurants only on button press
   const onPressSearch = () => {
-    fetchRestaurants(searchQuery, selectedCategory);
+    fetchRestaurants(searchQuery, selectedCategory, region.latitude, region.longitude);
   };
 
   const handleCategoryPress = async (category) => {
@@ -126,69 +113,70 @@ const SearchScreen = ({ navigation }) => {
             fetchRestaurants(searchQuery, category, latitude, longitude);
           },
           (error) => {
-            setErrorMsg("Sijainnin haku epäonnistui.");
+            console.log("Error getting location:", error);
           },
           { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
         );
       }
     } else {
-      fetchRestaurants(searchQuery, category);
+      fetchRestaurants(searchQuery, category, region.latitude, region.longitude);
     }
   };
 
   return (
     <Background>
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
         <View style={styles.container}>
-          <View style={styles.headerContainer}>
-            <Searchbar
-              placeholder="Search for restaurant..."
-              onChangeText={setSearchQuery}
-              value={searchQuery}
-              style={styles.searchbar}
-            />
-            <View style={styles.chipContainer}>
-              {['Fastfood', 'Pizza', 'Open', 'Sushi', 'Your location'].map((category) => (
-                <Chip
-                  key={category}
-                  selected={selectedCategory === category}
-                  onPress={() => handleCategoryPress(category)}
-                  style={styles.chip}
-                >
-                  {category}
-                </Chip>
-              ))}
-            </View>
-            <Button mode="contained" onPress={onPressSearch} style={styles.searchButton}>
-              Search
-            </Button>
+          {/* Top: SearchField, chips and search-button */}
+          <Searchbar
+            placeholder="Hae ravintolaa..."
+            onChangeText={setSearchQuery}
+            value={searchQuery}
+            style={styles.searchbar}
+          />
+          <View style={styles.chipContainer}>
+            {['Fastfood', 'Pizza', 'Open', 'Sushi', 'Your location'].map((category) => (
+              <Chip
+                key={category}
+                selected={selectedCategory === category}
+                onPress={() => handleCategoryPress(category)}
+                style={styles.chip}
+              >
+                {category}
+              </Chip>
+            ))}
           </View>
+          <Button mode="contained" onPress={onPressSearch} style={styles.searchButton}>
+            Search
+          </Button>
 
+          {/* Middle: RestaurantsList ScrollView */}
           <View style={styles.restaurantListContainer}>
-            <FlatList
-              data={restaurants}
-              keyExtractor={(item) => item.place_id}
-              renderItem={({ item }) => (
-                <Card style={styles.card}>
-                  <Card.Content>
-                    <Title>{item.name}</Title>
-                    <Paragraph>{item.formatted_address || item.vicinity}</Paragraph>
-                    {item.rating && <Paragraph>Rating: {item.rating}</Paragraph>}
-                  </Card.Content>
-                </Card>
+            <ScrollView contentContainerStyle={styles.listContainer}>
+              {errorMsg ? (
+                <Text style={styles.errorText}>{errorMsg}</Text>
+              ) : restaurants.length > 0 ? (
+                restaurants.map((restaurant) => (
+                  <Card key={restaurant.place_id} style={styles.card}>
+                    <Card.Content>
+                      <Title>{restaurant.name}</Title>
+                      <Paragraph>{restaurant.formatted_address || restaurant.vicinity}</Paragraph>
+                      {restaurant.rating && <Paragraph>Rating: {restaurant.rating}</Paragraph>}
+                    </Card.Content>
+                  </Card>
+                ))
+              ) : (
+                <Text style={styles.listItemText}>No restaurants found.</Text>
               )}
-              ListEmptyComponent={
-                <Text style={styles.listItemText}>Ei ravintoloita löytynyt.</Text>
-              }
-              contentContainerStyle={styles.listContainer}
-            />
+            </ScrollView>
           </View>
 
+          {/* Bottom: Static map */}
           <View style={styles.mapContainer}>
             <MapView
               style={styles.map}
               region={region}
               onRegionChangeComplete={setRegion}
+              showsUserLocation={true}
             >
               {restaurants.map((restaurant) => (
                 <Marker
@@ -204,23 +192,20 @@ const SearchScreen = ({ navigation }) => {
             </MapView>
           </View>
         </View>
-      </ScrollView>
     </Background>
   );
 };
 
 const styles = StyleSheet.create({
   scrollContainer: {
-    paddingTop: 80,   
-    paddingBottom: 80, 
+    paddingTop: 80,
+    paddingBottom: 80,
   },
   container: {
     flex: 1,
     paddingHorizontal: 16,
-    paddingVertical: 16,
-  },
-  headerContainer: {
-    marginBottom: 16,
+    paddingTop: 100,
+    paddingBottom: 80,
   },
   searchbar: {
     marginBottom: 8,
@@ -250,6 +235,12 @@ const styles = StyleSheet.create({
   listItemText: {
     fontSize: 18,
     textAlign: 'center',
+  },
+  errorText: {
+    color: 'red',
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 16,
   },
   mapContainer: {
     height: 300,
