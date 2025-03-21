@@ -1,4 +1,7 @@
 {
+
+  
+
 	"name": "tastyoulu",
 	"version": "1.0.0",
 	"main": "index.js",
@@ -37,4 +40,5 @@
 		"metro-react-native-babel-preset": "^0.77.0"
 	},
 	"private": true
+
 }
