@@ -1,17 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  Image,
-  FlatList,
-  StyleSheet,
-  Modal,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-} from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Image, FlatList, StyleSheet, Modal, KeyboardAvoidingView, Platform,  ScrollView } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import Background from '../components/Background';
@@ -29,21 +17,16 @@ const ReviewScreen = () => {
 
   const GOOGLE_PLACES_API_KEY = Constants.expoConfig?.extra?.googlePlacesApiKey;
 
-  const handleStarPress = (index) => {
-    setRating(index + 1);
-  };
+  const handleStarPress = (index) => setRating(index + 1);
 
   const pickImage = async () => {
-    let result = await ImagePicker.launchImageLibraryAsync({
+    const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       aspect: [4, 3],
       quality: 1,
     });
-
-    if (!result.canceled) {
-      setImage(result.assets[0].uri);
-    }
+    if (!result.canceled) setImage(result.assets[0].uri);
   };
 
   const submitReview = () => {
@@ -68,67 +51,34 @@ const ReviewScreen = () => {
     }
   };
 
-  const openReview = (reviewItem) => {
-    setSelectedReview(reviewItem);
+  const openReview = (r) => {
+    setSelectedReview(r);
     setModalVisible(true);
   };
 
-  const handleThumbUpPress = (reviewId) => {
-    setReviews((prevReviews) =>
-      prevReviews.map((r) => {
-        if (r.id === reviewId) {
-          if (r.userVote === 'up') return r;
-          else if (r.userVote === 'down') {
-            return {
-              ...r,
-              downVotes: r.downVotes - 1,
-              upVotes: r.upVotes + 1,
-              userVote: 'up',
-            };
-          } else {
-            return {
-              ...r,
-              upVotes: r.upVotes + 1,
-              userVote: 'up',
-            };
-          }
-        }
-        return r;
-      })
-    );
-  };
+  const voteHandler = (id, type) => {
+    setReviews((prev) =>
+      prev.map((r) => {
+        if (r.id !== id) return r;
+        const up = r.upVotes;
+        const down = r.downVotes;
+        const userVote = r.userVote;
 
-  const handleThumbDownPress = (reviewId) => {
-    setReviews((prevReviews) =>
-      prevReviews.map((r) => {
-        if (r.id === reviewId) {
-          if (r.userVote === 'down') return r;
-          else if (r.userVote === 'up') {
-            return {
-              ...r,
-              upVotes: r.upVotes - 1,
-              downVotes: r.downVotes + 1,
-              userVote: 'down',
-            };
-          } else {
-            return {
-              ...r,
-              downVotes: r.downVotes + 1,
-              userVote: 'down',
-            };
-          }
-        }
-        return r;
+        if (userVote === type) return r;
+
+        if (userVote === 'up' && type === 'down')
+          return { ...r, upVotes: up - 1, downVotes: down + 1, userVote: 'down' };
+        if (userVote === 'down' && type === 'up')
+          return { ...r, downVotes: down - 1, upVotes: up + 1, userVote: 'up' };
+
+        return { ...r, [`${type}Votes`]: (type === 'up' ? up : down) + 1, userVote: type };
       })
     );
   };
 
   useEffect(() => {
-    if (restaurant) {
-      fetchRestaurants(restaurant);
-    } else {
-      setFetchedRestaurants([]);
-    }
+    if (restaurant) fetchRestaurants(restaurant);
+    else setFetchedRestaurants([]);
   }, [restaurant]);
 
   useEffect(() => {
@@ -139,54 +89,33 @@ const ReviewScreen = () => {
   }, [reviews]);
 
   const fetchRestaurants = async (query) => {
-    let keyword = query.trim();
-    if (!keyword) return;
-
-    keyword = `${keyword} in Oulu`;
-    const url = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(
-      keyword
-    )}&key=${GOOGLE_PLACES_API_KEY}`;
+    const keyword = `${query.trim()} in Oulu`;
+    const url = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(keyword)}&key=${GOOGLE_PLACES_API_KEY}`;
 
     try {
-      const response = await fetch(url);
-      const data = await response.json();
-
-      if (data.error_message) {
-        console.error(data.error_message);
-        setFetchedRestaurants([]);
-      } else if (data.results) {
-        const filteredResults = data.results.filter((item) => {
-          const placeTypes = item.types || [];
-          return placeTypes.includes('restaurant') || placeTypes.includes('cafe');
-        });
-        setFetchedRestaurants(filteredResults);
-      } else {
-        setFetchedRestaurants([]);
-      }
-    } catch (error) {
-      console.error('Virhe ravintoloiden haussa:', error);
+      const res = await fetch(url);
+      const data = await res.json();
+      if (data.results) {
+        const filtered = data.results.filter((item) =>
+          (item.types || []).some((t) => t === 'restaurant' || t === 'cafe')
+        );
+        setFetchedRestaurants(filtered);
+      } else setFetchedRestaurants([]);
+    } catch {
       setFetchedRestaurants([]);
     }
   };
 
   return (
     <Background>
-      <KeyboardAvoidingView
-        style={styles.container}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      >
+      <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
           <View style={styles.contentWrapper}>
             <Text style={styles.title}>Submit your review</Text>
 
             <View style={styles.searchSection}>
-              <TextInput
-                value={restaurant}
-                onChangeText={setRestaurant}
-                placeholder="Restaurant name"
-                style={styles.searchInput}
-              />
-              {fetchedRestaurants.length > 0 && (
+              <TextInput value={restaurant} onChangeText={setRestaurant} placeholder="Restaurant name" style={styles.searchInput} />
+              {!!fetchedRestaurants.length && (
                 <View style={styles.listContainer}>
                   <FlatList
                     data={fetchedRestaurants.slice(0, 10)}
@@ -218,11 +147,9 @@ const ReviewScreen = () => {
             />
 
             <View style={styles.starContainer}>
-              {[...Array(5)].map((_, index) => (
-                <TouchableOpacity key={index} onPress={() => handleStarPress(index)}>
-                  <Text style={index < rating ? styles.filledStar : styles.star}>
-                    {index < rating ? '★' : '☆'}
-                  </Text>
+              {[...Array(5)].map((_, i) => (
+                <TouchableOpacity key={i} onPress={() => handleStarPress(i)}>
+                  <Text style={i < rating ? styles.filledStar : styles.star}>{i < rating ? '★' : '☆'}</Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -243,105 +170,60 @@ const ReviewScreen = () => {
                 keyExtractor={(item) => item.id}
                 extraData={reviews}
                 renderItem={({ item }) => (
-                    <View style={styles.reviewCard}>
-                      {/* Peukut ylös/alas - toimivat itsenäisesti */}
-                      <View style={styles.thumbContainer}>
-                        <TouchableOpacity
-                          style={styles.thumbButtonLarge}
-                          onPress={() => handleThumbUpPress(item.id)}
-                        >
-                          <Ionicons
-                            name="thumbs-up"
-                            size={26}
-                            color={item.userVote === 'up' ? '#6200EA' : '#888'}
-                          />
-                          <Text style={styles.thumbCount}>{item.upVotes}</Text>
-                        </TouchableOpacity>
-                  
-                        <TouchableOpacity
-                          style={styles.thumbButtonLarge}
-                          onPress={() => handleThumbDownPress(item.id)}
-                        >
-                          <Ionicons
-                            name="thumbs-down"
-                            size={26}
-                            color={item.userVote === 'down' ? '#6200EA' : '#888'}
-                          />
-                          <Text style={styles.thumbCount}>{item.downVotes}</Text>
-                        </TouchableOpacity>
-                      </View>
-                  
-                      {/* Klikattava teksti- ja kuvaosa erikseen */}
-                      <TouchableOpacity
-                        onPress={() => openReview(item)}
-                        activeOpacity={0.8}
-                      >
-                        <View style={styles.reviewCardTop}>
-                          {item.image && (
-                            <Image source={{ uri: item.image }} style={styles.reviewImage} />
-                          )}
-                          <View style={styles.reviewTextContainer}>
-                            <Text style={styles.reviewTitle}>{item.restaurant}</Text>
-                            <Text style={styles.reviewDescription} numberOfLines={2}>
-                              {item.review}
-                            </Text>
-                            <Text style={styles.reviewRating}>{'⭐'.repeat(item.rating)}</Text>
-                          </View>
-                        </View>
-                        <Text style={styles.reviewDate}>{item.date}</Text>
+                  <View style={styles.reviewCard}>
+                    <View style={styles.thumbContainer}>
+                      <TouchableOpacity style={styles.thumbButtonLarge} onPress={() => voteHandler(item.id, 'up')}>
+                        <Ionicons name="thumbs-up" size={26} color={item.userVote === 'up' ? '#6200EA' : '#888'} />
+                        <Text style={styles.thumbCount}>{item.upVotes}</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity style={styles.thumbButtonLarge} onPress={() => voteHandler(item.id, 'down')}>
+                        <Ionicons name="thumbs-down" size={26} color={item.userVote === 'down' ? '#6200EA' : '#888'} />
+                        <Text style={styles.thumbCount}>{item.downVotes}</Text>
                       </TouchableOpacity>
                     </View>
-                  )}                  
+
+                    <TouchableOpacity onPress={() => openReview(item)} activeOpacity={0.8}>
+                      <View style={styles.reviewCardTop}>
+                        {item.image && <Image source={{ uri: item.image }} style={styles.reviewImage} />}
+                        <View style={styles.reviewTextContainer}>
+                          <Text style={styles.reviewTitle}>{item.restaurant}</Text>
+                          <Text style={styles.reviewDescription} numberOfLines={2}>{item.review}</Text>
+                          <Text style={styles.reviewRating}>{'⭐'.repeat(item.rating)}</Text>
+                        </View>
+                      </View>
+                      <Text style={styles.reviewDate}>{item.date}</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
               />
             </View>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
 
-      {/* Modal (popup) */}
       <Modal visible={modalVisible} transparent animationType="slide">
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
             {selectedReview && (
               <>
                 <Text style={styles.modalTitle}>{selectedReview.restaurant}</Text>
-                {selectedReview.image && (
-                  <Image source={{ uri: selectedReview.image }} style={styles.modalImage} />
-                )}
+                {selectedReview.image && <Image source={{ uri: selectedReview.image }} style={styles.modalImage} />}
                 <Text style={styles.modalText}>{selectedReview.review}</Text>
                 <Text style={styles.modalRating}>{'⭐'.repeat(selectedReview.rating)}</Text>
                 <Text style={styles.reviewDate}>{selectedReview.date}</Text>
 
                 <View style={styles.modalThumbContainer}>
-                  <TouchableOpacity
-                    style={styles.thumbButtonLarge}
-                    onPress={() => handleThumbUpPress(selectedReview.id)}
-                  >
-                    <Ionicons
-                      name="thumbs-up"
-                      size={28}
-                      color={selectedReview.userVote === 'up' ? '#6200EA' : '#888'}
-                    />
+                  <TouchableOpacity style={styles.thumbButtonLarge} onPress={() => voteHandler(selectedReview.id, 'up')}>
+                    <Ionicons name="thumbs-up" size={28} color={selectedReview.userVote === 'up' ? '#6200EA' : '#888'} />
                     <Text style={styles.thumbCount}>{selectedReview.upVotes}</Text>
                   </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={styles.thumbButtonLarge}
-                    onPress={() => handleThumbDownPress(selectedReview.id)}
-                  >
-                    <Ionicons
-                      name="thumbs-down"
-                      size={28}
-                      color={selectedReview.userVote === 'down' ? '#6200EA' : '#888'}
-                    />
+                  <TouchableOpacity style={styles.thumbButtonLarge} onPress={() => voteHandler(selectedReview.id, 'down')}>
+                    <Ionicons name="thumbs-down" size={28} color={selectedReview.userVote === 'down' ? '#6200EA' : '#888'} />
                     <Text style={styles.thumbCount}>{selectedReview.downVotes}</Text>
                   </TouchableOpacity>
                 </View>
 
-                <TouchableOpacity
-                  onPress={() => setModalVisible(false)}
-                  style={styles.closeButton}
-                >
+                <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.closeButton}>
                   <Text style={styles.closeButtonText}>Close</Text>
                 </TouchableOpacity>
               </>
@@ -354,22 +236,18 @@ const ReviewScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  /* Kokonaiscontainer */
   container: {
     flex: 1,
     width: '100%',
   },
-  /* ScrollView:in sisältö */
   scrollContainer: {
     paddingBottom: 20,
     alignItems: 'center',
   },
-  /* Kääritään varsinainen sisältö */
   contentWrapper: {
     width: '90%',
-    marginTop: 80, // Jotta yläbar ei peitä sisältöä
+    marginTop: 80, 
   },
-  /* Otsikko */
   title: {
     fontSize: 24,
     fontWeight: 'bold',
@@ -377,7 +255,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 20,
   },
-  /* Ravintolan haku + hakutulokset */
   searchSection: {
     marginBottom: 15,
   },
@@ -387,12 +264,10 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     borderWidth: 1,
     borderColor: '#ddd',
-    // Varjostus iOS
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
-    // Varjostus Android
     elevation: 2,
   },
   listContainer: {
@@ -419,7 +294,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#777',
   },
-  /* Arvostelun kuvaus */
   input: {
     backgroundColor: '#fff',
     padding: 14,
@@ -428,14 +302,13 @@ const styles = StyleSheet.create({
     borderColor: '#ddd',
     marginBottom: 15,
     minHeight: 60,
-    // Varjostus
+
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
     elevation: 2,
   },
-  /* Tähtiarvio */
   starContainer: {
     flexDirection: 'row',
     marginBottom: 15,
@@ -451,7 +324,6 @@ const styles = StyleSheet.create({
     color: '#FFD700',
     marginHorizontal: 3,
   },
-  /* Nappien yleinen tyyli */
   imageButton: {
     backgroundColor: '#fff',
     padding: 12,
@@ -472,7 +344,6 @@ const styles = StyleSheet.create({
     color: '#333',
     fontWeight: '600',
   },
-  /* Kuvan esikatselu */
   previewImage: {
     width: 120,
     height: 120,
@@ -480,7 +351,6 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     marginBottom: 20,
   },
-  /* Submit-nappi */
   submitButton: {
     backgroundColor: '#6200EA',
     padding: 14,
@@ -499,13 +369,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-  /* Arvostelulistan kontti */
   reviewsContainer: {
     width: '100%',
-    height: 350, // Näytetään useampi arvostelu kerrallaan
+    height: 350, 
     marginBottom: 30,
   },
-  /* Yksittäinen arvostelukortti */
   reviewCard: {
     backgroundColor: '#fff',
     padding: 14,
@@ -517,12 +385,12 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.15,
     shadowRadius: 4,
     elevation: 3,
-    position: 'relative', // jotta peukkujen absolute-position toimii
+    position: 'relative', 
   },
   thumbButtonLarge: {
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 10, // Suurempi painopinta
+    padding: 10, 
     marginLeft: 10,
   },
   modalThumbContainer: {
@@ -530,7 +398,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginTop: 15,
   },
-  /* Peukut ylös/alas -kontti oikeassa yläkulmassa */
   thumbContainer: {
     position: 'absolute',
     top: 10,
@@ -580,7 +447,6 @@ const styles = StyleSheet.create({
     marginTop: 8,
     textAlign: 'right',
   },
-  /* Modaalin tyylit */
   modalContainer: {
     flex: 1,
     justifyContent: 'center',
