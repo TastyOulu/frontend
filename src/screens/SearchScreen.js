@@ -40,15 +40,33 @@ useEffect(() => {
   })();
 }, []);
 
-  const fetchRestaurants = async (query, category, lat, lng) => {
-    let keyword = query.trim() || "restaurant";
-    // If the keyword does not contain "restaurant", add it
-    if (!keyword.toLowerCase().includes("restaurant")) {
-      keyword = `${keyword} restaurant`;
+
+  // New Place Types mapping
+  const newPlaceTypeMapping = {
+    'Fastfood': 'fast_food_restaurant',
+    'Pizza': 'pizza_restaurant',
+    'Sushi': 'sushi_restaurant',
+    'Cafe': 'coffee_shop',
+    'Bakery': 'bakery',
+    'Fine Dining': 'fine_dining_restaurant',
+    'Bar': 'bar',
+    'Vegetarian': 'vegetarian_restaurant',
+    'Steakhouse': 'steak_house',
+    'Your location': '',
+  };
+
+  const fetchRestaurants = async (query, placeType, lat, lng) => {
+    const locationLat = lat || region.latitude;
+    const locationLng = lng || region.longitude;
+
+    let url = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${locationLat},${locationLng}&radius=5000&key=${GOOGLE_PLACES_API_KEY}`;
+
+    if (placeType) {
+      url += `&keyword=${placeType}`;
+    } else {
+      const keyword = query.trim() || "restaurant";
+      url += `&keyword=${encodeURIComponent(keyword)}`;
     }
-    // Fetch radius 5km
-    const url = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(keyword)}&location=${lat},${lng}&radius=5000&key=${GOOGLE_PLACES_API_KEY}`;
-        
     try {
       const response = await fetch(url);
       const data = await response.json();
@@ -63,8 +81,7 @@ useEffect(() => {
         setRestaurants([]);
       }
     } catch (error) {
-      console.error("Error fetching restaurants:", error);
-      setErrorMsg("Error fetching restaurants.");
+      setErrorMsg("Ravintoloiden haku epäonnistui.");
       setRestaurants([]);
     }
   };
@@ -94,11 +111,13 @@ useEffect(() => {
 
   // Fetch restaurants only on button press
   const onPressSearch = () => {
-    fetchRestaurants(searchQuery, selectedCategory, region.latitude, region.longitude);
+    fetchRestaurants(searchQuery, '', region.latitude, region.longitude);
   };
 
   const handleCategoryPress = async (category) => {
     setSelectedCategory(category);
+    const placeType = newPlaceTypeMapping[category];
+
     if (category === 'Your location') {
       const hasPermission = await requestLocationPermission();
       if (hasPermission) {
@@ -111,7 +130,7 @@ useEffect(() => {
               latitudeDelta: 0.01,
               longitudeDelta: 0.01,
             });
-            fetchRestaurants(searchQuery, category, latitude, longitude);
+            fetchRestaurants(searchQuery, '', latitude, longitude);
           },
           (error) => {
             console.log("Error getting location:", error);
@@ -120,7 +139,7 @@ useEffect(() => {
         );
       }
     } else {
-      fetchRestaurants(searchQuery, category, region.latitude, region.longitude);
+      fetchRestaurants(searchQuery, placeType, region.latitude, region.longitude);
     }
   };
   
@@ -137,24 +156,28 @@ useEffect(() => {
   return (
     <Background>
         <View style={styles.container}>
-          {/* Top: SearchField, chips and search-button */}
-          <Searchbar
-            placeholder="Search for restaurants"
-            onChangeText={setSearchQuery}
-            value={searchQuery}
-            style={styles.searchbar}
-          />
-          <View style={styles.chipContainer}>
-            {['Fastfood', 'Pizza', 'Open', 'Sushi', 'Your location'].map((category) => (
-              <Chip
-                key={category}
-                selected={selectedCategory === category}
-                onPress={() => handleCategoryPress(category)}
-                style={styles.chip}
-              >
-                {category}
-              </Chip>
-            ))}
+          <View style={styles.headerContainer}>
+            <Searchbar
+              placeholder="Search for restaurant..."
+              onChangeText={setSearchQuery}
+              value={searchQuery}
+              style={styles.searchbar}
+            />
+            <View style={styles.chipContainer}>
+  {['Fastfood', 'Pizza', 'Sushi', 'Cafe', 'Bakery', 'Fine Dining', 'Bar', 'Vegetarian', 'Steakhouse', 'Your location'].map((category) => (
+    <Chip
+      key={category}
+      selected={selectedCategory === category}
+      onPress={() => handleCategoryPress(category)}
+      style={styles.chip}
+    >
+      {category}
+    </Chip>
+  ))}
+</View>
+            <Button mode="contained" onPress={onPressSearch} style={styles.searchButton}>
+              Search
+            </Button>
           </View>
           <Button mode="contained" onPress={onPressSearch} style={styles.searchButton}>
             Search
@@ -162,28 +185,17 @@ useEffect(() => {
 
           {/* Middle: RestaurantsList ScrollView */}
           <View style={styles.restaurantListContainer}>
-            <ScrollView contentContainerStyle={styles.listContainer}>
-              {errorMsg ? (
-                <Text style={styles.errorText}>{errorMsg}</Text>
-              ) : restaurants.length > 0 ? (
-                restaurants.map((restaurant) => (
-                  <Card key={restaurant.place_id} style={styles.card}>
-                    <Card.Content>
-                      <View style={styles.titleContainer}>
-                        <Title>{restaurant.name}</Title>
-                        <Button
-                          style={styles.navigateButton}
-                          onPress={() => openMap(restaurant)}
-                          icon={() => <Ionicons name="navigate-outline" size={20} color="#000" />}
-                        />
-                      </View>
-                      <Paragraph>{restaurant.formatted_address || restaurant.vicinity}</Paragraph>
-                      {restaurant.rating && <Paragraph>Rating: {restaurant.rating}</Paragraph>}
-                    </Card.Content>
-                  </Card>
-                ))
-              ) : (
-                <Text style={styles.listItemText}>No restaurants found.</Text>
+            <FlatList
+              data={restaurants}
+              keyExtractor={(item) => item.place_id}
+              renderItem={({ item }) => (
+                <Card style={styles.card}>
+                  <Card.Content>
+                    <Title>{item.name}</Title>
+                    <Paragraph>{item.vicinity || item.formatted_address}</Paragraph>
+                    {item.rating && <Paragraph>Rating: {item.rating}</Paragraph>}
+                  </Card.Content>
+                </Card>
               )}
             </ScrollView>
           </View>
@@ -204,7 +216,7 @@ useEffect(() => {
                     longitude: restaurant.geometry.location.lng,
                   }}
                   title={restaurant.name}
-                  description={restaurant.formatted_address || restaurant.vicinity}
+                  description={restaurant.vicinity || restaurant.formatted_address}
                 />
               ))}
             </MapView>
@@ -241,7 +253,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   restaurantListContainer: {
-    height: 250, 
+    height: 250,
     marginBottom: 16,
   },
   listContainer: {
@@ -278,5 +290,4 @@ const styles = StyleSheet.create({
     width: '100%',
   },
 });
-
 export default SearchScreen;
