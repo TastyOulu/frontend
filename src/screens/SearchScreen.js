@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, PermissionsAndroid, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, PermissionsAndroid, Platform, Linking } from 'react-native';
 import { Searchbar, Chip, Card, Title, Paragraph, Button } from 'react-native-paper';
 import MapView, { Marker } from 'react-native-maps';
 import Background from '../components/Background';
 import Constants from 'expo-constants';
 import * as Location from 'expo-location';
+import { Ionicons } from '@expo/vector-icons';
 
 const SearchScreen = ({ navigation }) => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -51,7 +52,7 @@ useEffect(() => {
     try {
       const response = await fetch(url);
       const data = await response.json();
-      console.log("API Response:", data);
+      //console.log("API Response:", data);
       if (data.error_message) {
         setErrorMsg(data.error_message);
         setRestaurants([]);
@@ -122,13 +123,23 @@ useEffect(() => {
       fetchRestaurants(searchQuery, category, region.latitude, region.longitude);
     }
   };
+  
+  // Open map when user presses "Navigate" button on a restaurant card
+  const openMap = (restaurant) => {
+    const { lat, lng } = restaurant.geometry.location;
+    const url = Platform.select({
+      ios: `maps:0,0?q=${restaurant.name}@${lat},${lng}`,
+      android: `geo:0,0?q=${lat},${lng}(${restaurant.name})`
+    });
+    Linking.openURL(url);
+  };
 
   return (
     <Background>
         <View style={styles.container}>
           {/* Top: SearchField, chips and search-button */}
           <Searchbar
-            placeholder="Hae ravintolaa..."
+            placeholder="Search for restaurants"
             onChangeText={setSearchQuery}
             value={searchQuery}
             style={styles.searchbar}
@@ -158,7 +169,14 @@ useEffect(() => {
                 restaurants.map((restaurant) => (
                   <Card key={restaurant.place_id} style={styles.card}>
                     <Card.Content>
-                      <Title>{restaurant.name}</Title>
+                      <View style={styles.titleContainer}>
+                        <Title>{restaurant.name}</Title>
+                        <Button
+                          style={styles.navigateButton}
+                          onPress={() => openMap(restaurant)}
+                          icon={() => <Ionicons name="navigate-outline" size={20} color="#000" />}
+                        />
+                      </View>
                       <Paragraph>{restaurant.formatted_address || restaurant.vicinity}</Paragraph>
                       {restaurant.rating && <Paragraph>Rating: {restaurant.rating}</Paragraph>}
                     </Card.Content>
@@ -249,6 +267,15 @@ const styles = StyleSheet.create({
   map: {
     width: '100%',
     height: '100%',
+  },
+  navigateButton: {
+    marginTop: 8,
+  },
+  titleContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    width: '100%',
   },
 });
 
