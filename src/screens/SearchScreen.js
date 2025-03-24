@@ -66,23 +66,33 @@ const SearchScreen = ({ navigation }) => {
     }
   };
 
-  const fetchRestaurants = async (query, category, lat, lng) => {
-    let keyword = query.trim() || "restaurant";
-    if (
-      !keyword.toLowerCase().includes("restaurant") &&
-      !keyword.toLowerCase().includes("cafe") &&
-      !keyword.toLowerCase().includes("kahvila")
-    ) {
-      keyword = `${keyword} restaurant`;
-    }
+  // New Place Types mapping
+  const newPlaceTypeMapping = {
+    'Fastfood': 'fast_food_restaurant',
+    'Pizza': 'pizza_restaurant',
+    'Sushi': 'sushi_restaurant',
+    'Cafe': 'coffee_shop',
+    'Bakery': 'bakery',
+    'Fine Dining': 'fine_dining_restaurant',
+    'Bar': 'bar',
+    'Vegetarian': 'vegetarian_restaurant',
+    'Steakhouse': 'steak_house',
+    'Your location': '',
+  };
 
-    if (!keyword.toLowerCase().includes("oulu")) {
-      keyword = `${keyword} in Oulu`;
-    }
+  const fetchRestaurants = async (query, placeType, lat, lng) => {
     const locationLat = lat || region.latitude;
     const locationLng = lng || region.longitude;
-    const url = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(keyword)}&location=${locationLat},${locationLng}&radius=5000&key=${GOOGLE_PLACES_API_KEY}`;
-    
+
+    let url = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${locationLat},${locationLng}&radius=5000&key=${GOOGLE_PLACES_API_KEY}`;
+
+    if (placeType) {
+      url += `&keyword=${placeType}`;
+    } else {
+      const keyword = query.trim() || "restaurant";
+      url += `&keyword=${encodeURIComponent(keyword)}`;
+    }
+
     try {
       const response = await fetch(url);
       const data = await response.json();
@@ -90,27 +100,25 @@ const SearchScreen = ({ navigation }) => {
         setErrorMsg(data.error_message);
         setRestaurants([]);
       } else if (data.results) {
-        const filteredResults = data.results.filter(item => 
-          item.types &&
-          (item.types.includes("restaurant") || item.types.includes("cafe"))
-        );
-        setRestaurants(filteredResults);
+        setRestaurants(data.results);
         setErrorMsg(null);
       } else {
         setRestaurants([]);
       }
     } catch (error) {
-      setErrorMsg("Error fetching restaurants.");
+      setErrorMsg("Ravintoloiden haku epäonnistui.");
       setRestaurants([]);
     }
   };
 
   const onPressSearch = () => {
-    fetchRestaurants(searchQuery, selectedCategory);
+    fetchRestaurants(searchQuery, '', region.latitude, region.longitude);
   };
 
   const handleCategoryPress = async (category) => {
     setSelectedCategory(category);
+    const placeType = newPlaceTypeMapping[category];
+
     if (category === 'Your location') {
       const hasPermission = await requestLocationPermission();
       if (hasPermission) {
@@ -123,7 +131,7 @@ const SearchScreen = ({ navigation }) => {
               latitudeDelta: 0.01,
               longitudeDelta: 0.01,
             });
-            fetchRestaurants(searchQuery, category, latitude, longitude);
+            fetchRestaurants(searchQuery, '', latitude, longitude);
           },
           (error) => {
             setErrorMsg("Sijainnin haku epäonnistui.");
@@ -132,7 +140,7 @@ const SearchScreen = ({ navigation }) => {
         );
       }
     } else {
-      fetchRestaurants(searchQuery, category);
+      fetchRestaurants(searchQuery, placeType, region.latitude, region.longitude);
     }
   };
 
@@ -148,17 +156,17 @@ const SearchScreen = ({ navigation }) => {
               style={styles.searchbar}
             />
             <View style={styles.chipContainer}>
-              {['Fastfood', 'Pizza', 'Open', 'Sushi', 'Your location'].map((category) => (
-                <Chip
-                  key={category}
-                  selected={selectedCategory === category}
-                  onPress={() => handleCategoryPress(category)}
-                  style={styles.chip}
-                >
-                  {category}
-                </Chip>
-              ))}
-            </View>
+  {['Fastfood', 'Pizza', 'Sushi', 'Cafe', 'Bakery', 'Fine Dining', 'Bar', 'Vegetarian', 'Steakhouse', 'Your location'].map((category) => (
+    <Chip
+      key={category}
+      selected={selectedCategory === category}
+      onPress={() => handleCategoryPress(category)}
+      style={styles.chip}
+    >
+      {category}
+    </Chip>
+  ))}
+</View>
             <Button mode="contained" onPress={onPressSearch} style={styles.searchButton}>
               Search
             </Button>
@@ -172,7 +180,7 @@ const SearchScreen = ({ navigation }) => {
                 <Card style={styles.card}>
                   <Card.Content>
                     <Title>{item.name}</Title>
-                    <Paragraph>{item.formatted_address || item.vicinity}</Paragraph>
+                    <Paragraph>{item.vicinity || item.formatted_address}</Paragraph>
                     {item.rating && <Paragraph>Rating: {item.rating}</Paragraph>}
                   </Card.Content>
                 </Card>
@@ -198,7 +206,7 @@ const SearchScreen = ({ navigation }) => {
                     longitude: restaurant.geometry.location.lng,
                   }}
                   title={restaurant.name}
-                  description={restaurant.formatted_address || restaurant.vicinity}
+                  description={restaurant.vicinity || restaurant.formatted_address}
                 />
               ))}
             </MapView>
@@ -211,8 +219,8 @@ const SearchScreen = ({ navigation }) => {
 
 const styles = StyleSheet.create({
   scrollContainer: {
-    paddingTop: 80,   
-    paddingBottom: 80, 
+    paddingTop: 80,
+    paddingBottom: 80,
   },
   container: {
     flex: 1,
@@ -238,7 +246,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   restaurantListContainer: {
-    height: 250, 
+    height: 250,
     marginBottom: 16,
   },
   listContainer: {
@@ -260,5 +268,4 @@ const styles = StyleSheet.create({
     height: '100%',
   },
 });
-
 export default SearchScreen;
