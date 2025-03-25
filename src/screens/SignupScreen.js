@@ -1,14 +1,18 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Image, Pressable, KeyboardAvoidingView, Platform, ScrollView } from "react-native";
+import { View, Text, StyleSheet, Image, Pressable, KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator } from "react-native";
 import { TextInput } from 'react-native-paper';
 import Background from '../components/Background';
-const Component = require('../../assets/Component 3.png');
+import Component from '../../assets/Component 3.png';
+import PasswordInput from '../components/PasswordInput';
 import axios from 'axios';
 
 export default function SignupScreen({ navigation }) {
     const [formData, setFormData] = useState({ email: '', username: '', password: '' });
     const [message, setMessage] = useState({ error: '', success: '' });
     const [loading, setLoading] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
+
+    const toggleShowPassword = () => setShowPassword(!showPassword);
 
     const handleSubmit = async () => {
         const { email, username, password } = formData;
@@ -18,25 +22,24 @@ export default function SignupScreen({ navigation }) {
             return;
         }
 
-        setLoading(true); 
+        setLoading(true);
 
         try {
-            const response = await axios.post('http://144.21.42.71:3000/api/auth/register', {
-                username: username,
-                email: email,
-                password: password
+            await axios.post('http://144.21.42.71:3000/api/auth/register', {
+                username,
+                email,
+                password
             });
+
             setMessage({ success: 'Registration successful! Redirecting to login page...', error: '' });
             setTimeout(() => navigation.navigate('Login'), 3000);
         } catch (error) {
             console.error('Error during registration:', error);
-            console.log(formData);
 
-            const errorMessage = error.response?.data?.message;
-                
+            const errorMessage = error.response?.data?.message || 'Registration failed. Please try again.';
             setMessage({ error: errorMessage, success: '' });
         } finally {
-            setLoading(false); 
+            setLoading(false);
         }
     };
 
@@ -52,6 +55,8 @@ export default function SignupScreen({ navigation }) {
                     </View>
                     <Text style={{ fontSize: 36, fontWeight: '600' }}>Create an account</Text>
                     <View style={{ flexDirection: 'column', marginTop: 20, marginBottom: 10 }}>
+
+                        {/* Email Input */}
                         <View style={{ flexDirection: 'row', alignItems: 'center', width: '90%', marginTop: 10, marginBottom: 10 }}>
                             <TextInput
                                 style={{ width: '100%', marginTop: 10 }}
@@ -65,6 +70,8 @@ export default function SignupScreen({ navigation }) {
                                 onChangeText={(text) => setFormData({ ...formData, email: text })}
                             />
                         </View>
+
+                        {/* Username Input */}
                         <View style={{ flexDirection: 'row', alignItems: 'center', width: '90%', marginBottom: 10 }}>
                             <TextInput
                                 style={{ width: '100%', marginTop: 10 }}
@@ -78,17 +85,13 @@ export default function SignupScreen({ navigation }) {
                             />
                         </View>
 
+                        {/* Password Input */}
                         <View>
-                            <TextInput
-                                style={{ width: '100%', marginTop: 10 }}
-                                placeholder="Password"
-                                mode="outlined"
-                                secureTextEntry
-                                left={<TextInput.Icon icon="lock" />}
-                                theme={{ roundness: 15 }}
+                            <PasswordInput
                                 value={formData.password}
-                                autoCapitalize='none'
                                 onChangeText={(text) => setFormData({ ...formData, password: text })}
+                                showPassword={showPassword}
+                                toggleShowPassword={toggleShowPassword}
                             />
                         </View>
                     </View>
@@ -109,9 +112,8 @@ export default function SignupScreen({ navigation }) {
                             style={{ backgroundColor: '#9859FC', alignItems: 'center', width: 200, borderRadius: 30, paddingVertical: 12, paddingHorizontal: 32, marginTop: 20 }}
                             onPress={handleSubmit}
                         >
-                            <Text style={{ color: 'white', fontSize: 18 }}>Submit</Text>
+                            {loading ? <ActivityIndicator color="white" /> : <Text style={{ color: 'white', fontSize: 18 }}>Submit</Text>}
                         </Pressable>
-
                     </View>
                 </ScrollView>
             </KeyboardAvoidingView>
