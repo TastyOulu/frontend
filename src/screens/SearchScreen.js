@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Platform, ScrollView, Linking } from 'react-native';
-import { Searchbar, Chip, Card, Title, Paragraph, Button } from 'react-native-paper';
+import { Searchbar, Chip, Card, Title, Paragraph, Button, IconButton } from 'react-native-paper';
 import MapView, { Marker } from 'react-native-maps';
 import Background from '../components/Background';
 import Constants from 'expo-constants';
@@ -20,6 +20,7 @@ const SearchScreen = () => {
     longitudeDelta: 0.01,
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [onlyOpenNow, setOnlyOpenNow] = useState(false);
 
   const mapRef = useRef(null);
   const API_KEY = Constants.expoConfig?.extra?.googlePlacesApiKey;
@@ -50,14 +51,36 @@ const SearchScreen = () => {
     return () => clearTimeout(delay);
   }, [searchQuery]);
 
+  useEffect(() => {
+    if (selectedCategory === 'Your location') {
+      handleCategoryPress('Your location', true);
+    } else if (selectedCategory) {
+      handleCategoryPress(selectedCategory, true);
+    } else {
+      fetchRestaurants(searchQuery, '', region.latitude, region.longitude);
+    }
+  }, [onlyOpenNow]);
+
+  const fetchPlaceDetails = async (placeId) => {
+    try {
+      const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=opening_hours&key=${API_KEY}`;
+      const res = await fetch(url);
+      const data = await res.json();
+      return data.result;
+    } catch (error) {
+      console.warn('Details fetch failed:', error);
+      return {};
+    }
+  };
+
   const fetchRestaurants = async (query, type, lat, lng) => {
     const latitude = lat || region.latitude;
     const longitude = lng || region.longitude;
     setIsLoading(true);
-  
+
     let url = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${latitude},${longitude}&radius=5000&key=${API_KEY}`;
     url += type ? `&keyword=${type}` : `&keyword=${encodeURIComponent(query.trim() || 'restaurant')}`;
-  
+
     try {
       const res = await fetch(url);
       const data = await res.json();
@@ -67,30 +90,41 @@ const SearchScreen = () => {
             ['restaurant', 'bar', 'cafe'].includes(t)
           )
         );
-  
-        const withDistance = filtered.map(item => ({
-          ...item,
-          distance: getDistance(
-            { latitude, longitude },
-            { latitude: item.geometry.location.lat, longitude: item.geometry.location.lng }
-          ),
+
+        const enriched = await Promise.all(filtered.map(async item => {
+          const details = await fetchPlaceDetails(item.place_id);
+          const opening_hours = details?.opening_hours;
+          return {
+            ...item,
+            distance: getDistance(
+              { latitude, longitude },
+              { latitude: item.geometry.location.lat, longitude: item.geometry.location.lng }
+            ),
+            opening_hours,
+          };
         }));
-        setRestaurants(withDistance);
+
+        const openFiltered = onlyOpenNow
+          ? enriched.filter(item => item.opening_hours?.open_now)
+          : enriched;
+
+        setRestaurants(openFiltered);
         setErrorMsg(null);
       } else {
         setRestaurants([]);
         setErrorMsg("No restaurants found.");
       }
-    } catch {
+    } catch (e) {
+      console.warn('fetchRestaurants failed:', e);
       setErrorMsg("Failed to fetch restaurants.");
       setRestaurants([]);
     } finally {
       setIsLoading(false);
     }
   };
-  
-  const handleCategoryPress = async (category) => {
-    if (selectedCategory === category) {
+
+  const handleCategoryPress = async (category, forceRefresh = false) => {
+    if (!forceRefresh && selectedCategory === category) {
       setSelectedCategory('');
       setSearchQuery('');
       setRestaurants([]);
@@ -137,22 +171,32 @@ const SearchScreen = () => {
             ['restaurant', 'bar', 'cafe'].includes(t)
           )
         );
-        
-        const enriched = all.map(item => ({
-          ...item,
-          distance: getDistance(
-            { latitude, longitude },
-            { latitude: item.geometry.location.lat, longitude: item.geometry.location.lng }
-          ),
+
+        const enriched = await Promise.all(filtered.map(async item => {
+          const details = await fetchPlaceDetails(item.place_id);
+          const opening_hours = details?.opening_hours;
+          return {
+            ...item,
+            distance: getDistance(
+              { latitude, longitude },
+              { latitude: item.geometry.location.lat, longitude: item.geometry.location.lng }
+            ),
+            opening_hours,
+          };
         }));
 
-        setRestaurants(enriched.sort((a, b) => a.distance - b.distance));
+        const openFiltered = onlyOpenNow
+          ? enriched.filter(item => item.opening_hours?.open_now)
+          : enriched;
+
+        setRestaurants(openFiltered.sort((a, b) => a.distance - b.distance));
       } catch {
         setErrorMsg("Failed to fetch nearby restaurants.");
       } finally {
         setIsLoading(false);
       }
     } else {
+      const type = categories[category] || '';
       fetchRestaurants(searchQuery, type, region.latitude, region.longitude);
     }
   };
@@ -181,12 +225,27 @@ const SearchScreen = () => {
     <Background>
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <View style={styles.container}>
-          <Searchbar
-            placeholder="Search restaurants..."
-            onChangeText={setSearchQuery}
-            value={searchQuery}
-            style={styles.searchbar}
-          />
+          <View style={styles.searchbarContainer}>
+            <Searchbar
+              placeholder="Search restaurants..."
+              onChangeText={setSearchQuery}
+              value={searchQuery}
+              style={styles.searchbar}
+            />
+            <Button
+              mode={onlyOpenNow ? 'contained' : 'outlined'}
+              onPress={() => setOnlyOpenNow(prev => !prev)}
+              style={[
+                styles.openNowButton,
+                onlyOpenNow && styles.openNowButtonActive
+              ]}
+              compact
+              icon="clock-outline"
+            >
+              Auki nyt
+            </Button>
+          </View>
+
           <View style={styles.chipContainer}>
             {Object.keys(categories).map(cat => (
               <Chip
@@ -200,9 +259,27 @@ const SearchScreen = () => {
               </Chip>
             ))}
           </View>
-          <Button mode="contained" onPress={() => fetchRestaurants(searchQuery, '', region.latitude, region.longitude)} style={styles.searchButton}>
+
+          {onlyOpenNow && (
+            <Text style={styles.openNowNotice}>
+              Näytetään vain avoinna olevat ravintolat
+            </Text>
+          )}
+
+          <Button
+            mode="contained"
+            onPress={() => {
+              setSelectedCategory('');
+              setTimeout(() => {
+                fetchRestaurants(searchQuery, '', region.latitude, region.longitude);
+              }, 0);
+            }}
+            style={styles.searchButton}
+          >
             Search
           </Button>
+
+
 
           <View style={styles.restaurantListContainer}>
             <ScrollView style={styles.restaurantListScroll} nestedScrollEnabled>
@@ -226,6 +303,14 @@ const SearchScreen = () => {
                         {item.vicinity || item.formatted_address}
                         {item.distance !== undefined && ` • ${(item.distance / 1000).toFixed(1)} km`}
                       </Paragraph>
+                      {item.opening_hours && (
+                        <Paragraph>
+                          {item.opening_hours.open_now ? 'Auki nyt' : 'Suljettu nyt'}
+                          {item.opening_hours.weekday_text &&
+                            ` • ${item.opening_hours.weekday_text[new Date().getDay() - 1]}`
+                          }
+                        </Paragraph>
+                      )}
                       {item.rating && <Paragraph>Rating: {item.rating}</Paragraph>}
                     </Card.Content>
                   </Card>
@@ -255,7 +340,11 @@ const SearchScreen = () => {
 const styles = StyleSheet.create({
   scrollContainer: { paddingTop: 80, paddingBottom: 80 },
   container: { flex: 1, paddingHorizontal: 16, paddingVertical: 16 },
-  searchbar: { marginBottom: 8 },
+  searchbarContainer: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
+  searchbar: { flex: 1, marginRight: 8 },
+  openNowButton: { height: 40, borderRadius: 20 },
+  openNowButtonActive: { backgroundColor: '#6200ee' },
+  openNowNotice: { textAlign: 'center', marginBottom: 8, fontWeight: 'bold', color: '#6200ee' },
   chipContainer: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', marginBottom: 8 },
   chip: { margin: 4, borderRadius: 20, paddingHorizontal: 10, backgroundColor: '#f0f0f0' },
   chipSelected: { backgroundColor: '#6200ee' },
