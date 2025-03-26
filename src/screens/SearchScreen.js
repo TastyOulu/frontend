@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Platform, ScrollView, Linking } from 'react-native';
-import { Searchbar, Chip, Card, Title, Paragraph, Button, IconButton } from 'react-native-paper';
+import { Searchbar, Chip, Card, Title, Paragraph, Button } from 'react-native-paper';
 import MapView, { Marker } from 'react-native-maps';
-import Background from '../components/Background';
 import Constants from 'expo-constants';
 import * as Location from 'expo-location';
 import { Ionicons } from '@expo/vector-icons';
@@ -20,6 +19,7 @@ const SearchScreen = () => {
     latitudeDelta: 0.01,
     longitudeDelta: 0.01,
   });
+  const [userLocation, setUserLocation] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [onlyOpenNow, setOnlyOpenNow] = useState(false);
 
@@ -147,6 +147,7 @@ const SearchScreen = () => {
 
         const location = await Location.getCurrentPositionAsync({});
         const { latitude, longitude } = location.coords;
+        setUserLocation({ latitude, longitude });
         const newRegion = { latitude, longitude, latitudeDelta: 0.01, longitudeDelta: 0.01 };
         setRegion(newRegion);
         mapRef.current?.animateToRegion(newRegion, 1000);
@@ -197,7 +198,6 @@ const SearchScreen = () => {
         setIsLoading(false);
       }
     } else {
-      const type = categories[category] || '';
       fetchRestaurants(searchQuery, type, region.latitude, region.longitude);
     }
   };
@@ -236,14 +236,11 @@ const SearchScreen = () => {
             <Button
               mode={onlyOpenNow ? 'contained' : 'outlined'}
               onPress={() => setOnlyOpenNow(prev => !prev)}
-              style={[
-                styles.openNowButton,
-                onlyOpenNow && styles.openNowButtonActive
-              ]}
+              style={[styles.openNowButton, onlyOpenNow && styles.openNowButtonActive]}
               compact
               icon="clock-outline"
             >
-             Open now
+              Open now
             </Button>
           </View>
 
@@ -262,9 +259,7 @@ const SearchScreen = () => {
           </View>
 
           {onlyOpenNow && (
-            <Text style={styles.openNowNotice}>
-              Showing only open restaurants
-            </Text>
+            <Text style={styles.openNowNotice}>Showing only open restaurants</Text>
           )}
 
           <Button
@@ -279,8 +274,6 @@ const SearchScreen = () => {
           >
             Search
           </Button>
-
-
 
           <View style={styles.restaurantListContainer}>
             <ScrollView style={styles.restaurantListScroll} nestedScrollEnabled>
@@ -308,8 +301,7 @@ const SearchScreen = () => {
                         <Paragraph>
                           {item.opening_hours.open_now ? 'Auki nyt' : 'Suljettu nyt'}
                           {item.opening_hours.weekday_text &&
-                            ` • ${item.opening_hours.weekday_text[new Date().getDay() - 1]}`
-                          }
+                            ` • ${item.opening_hours.weekday_text[new Date().getDay() - 1]}`}
                         </Paragraph>
                       )}
                       {item.rating && <Paragraph>Rating: {item.rating}</Paragraph>}
@@ -321,16 +313,26 @@ const SearchScreen = () => {
           </View>
 
           <View style={styles.mapContainer}>
-            <MapView ref={mapRef} style={styles.map} region={region}>
-              {restaurants.map(r => (
-                <Marker
-                  key={r.place_id}
-                  coordinate={{ latitude: r.geometry.location.lat, longitude: r.geometry.location.lng }}
-                  title={r.name}
-                  description={r.vicinity || r.formatted_address}
-                />
-              ))}
-            </MapView>
+          <MapView
+  ref={mapRef}
+  style={styles.map}
+  region={region}
+  showsUserLocation={true} 
+>
+  
+  {restaurants.map(r => (
+    <Marker
+      key={r.place_id}
+      coordinate={{
+        latitude: r.geometry.location.lat,
+        longitude: r.geometry.location.lng,
+      }}
+      title={r.name}
+      description={r.vicinity || r.formatted_address}
+    />
+  ))}
+</MapView>
+
           </View>
         </View>
       </ScrollView>
