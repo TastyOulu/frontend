@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Image, FlatList, StyleSheet, Modal, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
-import Background from '../components/Background';
 import Constants from 'expo-constants';
 import GradientBackground from '../components/GradientBackground';
+import axios from 'axios';
+import * as SecureStore from 'expo-secure-store';
 
 const ReviewScreen = () => {
   const [restaurant, setRestaurant] = useState('');
@@ -15,8 +16,46 @@ const ReviewScreen = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedReview, setSelectedReview] = useState(null);
   const [fetchedRestaurants, setFetchedRestaurants] = useState([]);
+  const [username, setUsername] = useState(null);
+
 
   const GOOGLE_PLACES_API_KEY = Constants.expoConfig?.extra?.googlePlacesApiKey;
+  const REACT_APP_API_URL = Constants.expoConfig?.extra?.REACT_APP_API_URL;
+
+  useEffect(() => {
+    const fetchUserInfo = async () => {
+      try {
+        const token = await SecureStore.getItemAsync('userToken');
+        if (!token) {
+          console.warn('Token missing');
+          return;
+        }
+  
+        const response = await axios.get(`${REACT_APP_API_URL}/user/info`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+    
+        const name = response.data?.username;
+  
+        if (name) {
+          setUsername(name);
+        } else {
+          setUsername('Anonymous');
+        }
+      } catch (error) {
+        console.error("User data fetch failed", error);
+        setUsername('Anonymous');
+      }
+    };
+  
+    fetchUserInfo();
+  }, []);
+  
+  
+  
+  
 
   const handleStarPress = index => setRating(index + 1);
 
@@ -31,6 +70,11 @@ const ReviewScreen = () => {
   };
 
   const submitReview = () => {
+    if (!username) {
+      alert('User info not loaded yet. Please wait a moment.');
+      return;
+    }
+  
     if (restaurant && review && rating) {
       const newReview = {
         id: Math.random().toString(),
@@ -38,7 +82,7 @@ const ReviewScreen = () => {
         review,
         rating,
         image,
-        username: 'Anonymous',
+        username,
         date: new Date().toLocaleString(),
         upVotes: 0,
         downVotes: 0,
@@ -51,6 +95,7 @@ const ReviewScreen = () => {
       setImage(null);
     }
   };
+  
 
   const openReview = r => {
     setSelectedReview(r);
@@ -165,73 +210,14 @@ const ReviewScreen = () => {
                   <Text style={styles.reviewTitle}>{item.restaurant}</Text>
                   <Text style={styles.reviewDescription}>{item.review}</Text>
                   <Text style={styles.reviewRating}>{'⭐'.repeat(item.rating)}</Text>
+                  <Text style={{ fontStyle: 'italic', color: '#666' }}>By: {item.username}</Text>
                 </View>
                 <Text style={styles.reviewDate}>{item.date}</Text>
               </TouchableOpacity>
             </View>
           )}
         />
-        <Modal visible={modalVisible} transparent animationType="slide">
-          <View style={styles.modalContainer}>
-            <View style={styles.modalContent}>
-              {selectedReview && (
-                <>
-                  <Text style={styles.modalTitle}>{selectedReview.restaurant}</Text>
-                  {selectedReview.image && <Image source={{ uri: selectedReview.image }} style={styles.modalImage} />}
-                  <Text style={styles.modalText}>{selectedReview.review}</Text>
-                  <Text style={styles.modalRating}>{'⭐'.repeat(selectedReview.rating)}</Text>
-                  <Text style={styles.reviewDate}>{selectedReview.date}</Text>
-                  <View style={styles.modalThumbContainer}>
-                    <TouchableOpacity style={styles.thumbButtonLarge} onPress={() => voteHandler(selectedReview.id, 'up')}>
-                      <Ionicons name="thumbs-up" size={32} color={selectedReview.userVote === 'up' ? '#6200EA' : '#888'} />
-                      <Text style={styles.thumbCount}>{selectedReview.upVotes}</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.thumbButtonLarge} onPress={() => voteHandler(selectedReview.id, 'down')}>
-                      <Ionicons name="thumbs-down" size={32} color={selectedReview.userVote === 'down' ? '#6200EA' : '#888'} />
-                      <Text style={styles.thumbCount}>{selectedReview.downVotes}</Text>
-                    </TouchableOpacity>
-                  </View>
-                  <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.closeButton}>
-                    <Text style={styles.closeButtonText}>Close</Text>
-                  </TouchableOpacity>
-                </>
-              )}
-            </View>
-          </View>
-        </Modal>
       </KeyboardAvoidingView>
-
-
-      <Modal visible={modalVisible} transparent animationType="slide">
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            {selectedReview && (
-              <>
-                <Text style={styles.modalTitle}>{selectedReview.restaurant}</Text>
-                {selectedReview.image && <Image source={{ uri: selectedReview.image }} style={styles.modalImage} />}
-                <Text style={styles.modalText}>{selectedReview.review}</Text>
-                <Text style={styles.modalRating}>{'⭐'.repeat(selectedReview.rating)}</Text>
-                <Text style={styles.reviewDate}>{selectedReview.date}</Text>
-
-                <View style={styles.modalThumbContainer}>
-                  <TouchableOpacity style={styles.thumbButtonLarge} onPress={() => voteHandler(selectedReview.id, 'up')}>
-                    <Ionicons name="thumbs-up" size={28} color={selectedReview.userVote === 'up' ? '#6200EA' : '#888'} />
-                    <Text style={styles.thumbCount}>{selectedReview.upVotes}</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity style={styles.thumbButtonLarge} onPress={() => voteHandler(selectedReview.id, 'down')}>
-                    <Ionicons name="thumbs-down" size={28} color={selectedReview.userVote === 'down' ? '#6200EA' : '#888'} />
-                    <Text style={styles.thumbCount}>{selectedReview.downVotes}</Text>
-                  </TouchableOpacity>
-                </View>
-
-                <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.closeButton}>
-                  <Text style={styles.closeButtonText}>Close</Text>
-                </TouchableOpacity>
-              </>
-            )}
-          </View>
-        </View>
-      </Modal>
     </GradientBackground>
   );
 };
