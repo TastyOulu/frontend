@@ -19,9 +19,9 @@ export default function GradientBackground({
       style={styles.gradient}
     >
       <StatusBar style={statusBarStyle} />
-      <SafeAreaView style={[styles.safeArea, { padding }]}>
+      {/*<SafeAreaView style={[styles.safeArea, { padding }]}>*/}
         {children}
-      </SafeAreaView>
+      {/*</SafeAreaView>*/}
     </LinearGradient>
   );
 }
