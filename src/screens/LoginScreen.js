@@ -32,26 +32,24 @@ export default function LoginScreen({ navigation }) {
         try {
             const response = await axios.post(`${REACT_APP_API_URL}/auth/login`, {
                 email,
-                password
-            });         
-            
+                password,
+            });
+    
             if (response.data?.token) {
                 const token = response.data.token;
                 await SecureStore.setItemAsync('userToken', token).catch(console.error);
-
+    
                 setMessage({ error: '', success: 'Login successful' });
+                console.log('Login successful', response.data);
                 setFormData({ email: '', password: '' });
-                setMessage({ error: '', success: '' });
                 navigation.navigate('Main');
             } else {
                 setMessage({ error: 'Login failed. Please try again.', success: '' });
             }
         } catch (error) {
-            if (error.response) {
-                setMessage({ error: error.response.data.message || 'Invalid email or password', success: '' });
-            } else {
-                setMessage({ error: 'Network error, please try again later.', success: '' });
-            }
+            console.error('Error during login:', error.response?.data || error.message);
+            const errorMessage = error.response?.data?.message || 'Network error, please try again later.';
+            setMessage({ error: errorMessage, success: '' });
         } finally {
             setLoading(false);
         }
@@ -86,7 +84,7 @@ export default function LoginScreen({ navigation }) {
                                 mode= "outlined" 
                                 keyboardType="email-address"
                                 autoCapitalize="none"
-                                left={<TextInput.Icon icon="account" />}
+                                left={<TextInput.Icon icon="email" />}
                                 theme={{ roundness: 15 }}
                                 value={formData.email}
                                 onChangeText={(text) => setFormData({ ...formData, email: text })}
@@ -112,9 +110,14 @@ export default function LoginScreen({ navigation }) {
 
                     {/* Sign Up Link */}
                     <Pressable onPress={() => navigation.navigate('Signup')}>
-                            <Text style={{fontSize:18}}>Don't have an account?
+                            <Text style={{fontSize:18, paddingBottom:'10'}}>Don't have an account?
                                 <Text style={{color:'purple',textDecorationLine:'underline'}}> Sign up</Text>
                             </Text>
+                    </Pressable>
+                    <Pressable onPress={() => navigation.navigate('ForgotPassword')}>
+                        <Text style={{fontSize:18}}>Forgot password?
+                            <Text style={{color:'purple',textDecorationLine:'underline'}}> Reset</Text>
+                        </Text>
                     </Pressable>
 
                     {/* Login Button */}
