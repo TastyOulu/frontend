@@ -7,6 +7,7 @@ import Constants from 'expo-constants';
 import * as Location from 'expo-location';
 import { Ionicons } from '@expo/vector-icons';
 import { getDistance } from 'geolib';
+import GradientBackground from '../components/GradientBackground';
 
 const SearchScreen = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -222,7 +223,7 @@ const SearchScreen = () => {
   };
 
   return (
-    <Background>
+    <GradientBackground>
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <View style={styles.container}>
           <View style={styles.searchbarContainer}>
@@ -333,12 +334,12 @@ const SearchScreen = () => {
           </View>
         </View>
       </ScrollView>
-    </Background>
+    </GradientBackground>
   );
 };
 
 const styles = StyleSheet.create({
-  scrollContainer: { paddingTop: 80, paddingBottom: 80 },
+  scrollContainer: { paddingTop: 20, paddingBottom: 80 },
   container: { flex: 1, paddingHorizontal: 16, paddingVertical: 16 },
   searchbarContainer: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
   searchbar: { flex: 1, marginRight: 8 },

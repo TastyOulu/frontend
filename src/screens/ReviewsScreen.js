@@ -4,6 +4,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import Background from '../components/Background';
 import Constants from 'expo-constants';
+import GradientBackground from '../components/GradientBackground';
 
 const ReviewScreen = () => {
   const [restaurant, setRestaurant] = useState('');
@@ -101,7 +102,7 @@ const ReviewScreen = () => {
   };
 
   return (
-    <Background>
+    <GradientBackground>
       <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <FlatList
           nestedScrollEnabled
@@ -199,7 +200,39 @@ const ReviewScreen = () => {
           </View>
         </Modal>
       </KeyboardAvoidingView>
-    </Background>
+
+
+      <Modal visible={modalVisible} transparent animationType="slide">
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            {selectedReview && (
+              <>
+                <Text style={styles.modalTitle}>{selectedReview.restaurant}</Text>
+                {selectedReview.image && <Image source={{ uri: selectedReview.image }} style={styles.modalImage} />}
+                <Text style={styles.modalText}>{selectedReview.review}</Text>
+                <Text style={styles.modalRating}>{'⭐'.repeat(selectedReview.rating)}</Text>
+                <Text style={styles.reviewDate}>{selectedReview.date}</Text>
+
+                <View style={styles.modalThumbContainer}>
+                  <TouchableOpacity style={styles.thumbButtonLarge} onPress={() => voteHandler(selectedReview.id, 'up')}>
+                    <Ionicons name="thumbs-up" size={28} color={selectedReview.userVote === 'up' ? '#6200EA' : '#888'} />
+                    <Text style={styles.thumbCount}>{selectedReview.upVotes}</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.thumbButtonLarge} onPress={() => voteHandler(selectedReview.id, 'down')}>
+                    <Ionicons name="thumbs-down" size={28} color={selectedReview.userVote === 'down' ? '#6200EA' : '#888'} />
+                    <Text style={styles.thumbCount}>{selectedReview.downVotes}</Text>
+                  </TouchableOpacity>
+                </View>
+
+                <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.closeButton}>
+                  <Text style={styles.closeButtonText}>Close</Text>
+                </TouchableOpacity>
+              </>
+            )}
+          </View>
+        </View>
+      </Modal>
+    </GradientBackground>
   );
 };
 

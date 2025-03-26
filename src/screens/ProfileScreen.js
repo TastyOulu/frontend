@@ -4,6 +4,7 @@ import * as ImagePicker from 'expo-image-picker'
 import Background from '../components/Background';
 import { Alert } from 'react-native'
 import { IconButton } from 'react-native-paper';
+import GradientBackground from "../components/GradientBackground";
 
 
 
@@ -43,7 +44,7 @@ export default function ProfileScreen({ navigation }) {
     const avatarUrl = avatarUri ? avatarUri : `https://api.dicebear.com/7.x/pixel-art/png?seed=${avatarSeed}`;
 
     return (
-        <Background>
+        <GradientBackground>
         <View style={styles.container}>
             <View style={{flexDirection:'row',alignItems:'center',flexWrap:'nowrap',marginHorizontal:20}}>
                 <Image 
@@ -111,7 +112,7 @@ export default function ProfileScreen({ navigation }) {
                 </View>
 
                 
-                <View style={{position:'absolute',bottom:80,width:'100%',alignItems:'center'}}>
+                <View style={{position:'absolute',bottom:10,width:'100%',alignItems:'center'}}>
                     <Pressable 
                                 style={{backgroundColor: 'red',width:300,borderRadius:30,paddingVertical: 12,
                                 paddingHorizontal: 32,marginTop: 20}} 
@@ -120,14 +121,14 @@ export default function ProfileScreen({ navigation }) {
                         </Pressable>
             </View>
         </View>
-        </Background>
+        </GradientBackground>
     );
 }
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        paddingTop: 20,
-       marginTop: 100,
+        paddingTop: 10,
+       marginTop: 10,
     },
 });

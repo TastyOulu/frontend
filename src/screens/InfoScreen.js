@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import Background from '../components/Background';
 import { Ionicons } from '@expo/vector-icons';
+import GradientBackground from '../components/GradientBackground';
 
 const faqImage = require('../../assets/FAQ.png');
 
@@ -32,7 +33,7 @@ const IconRow = () => (
 
 export default function InfoScreen({ navigation }) {
     return (
-        <Background>
+        <GradientBackground>
             <View style={styles.header}>
 				<Image source={faqImage} style={{width: 305, height: 159,resizeMode: 'contain'}} />
             </View>
@@ -79,7 +80,7 @@ export default function InfoScreen({ navigation }) {
                     </View>
                 </View>
             </ScrollView>
-        </Background>
+        </GradientBackground>
     );
 }
 
@@ -95,7 +96,7 @@ const styles = StyleSheet.create({
     header: {
         justifyContent: 'center',
         alignItems: 'center',
-        paddingTop: 120,
+        paddingTop: 10,
         paddingBottom: 20,
     },
     image: {

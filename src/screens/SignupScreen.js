@@ -5,6 +5,7 @@ import Background from '../components/Background';
 import Component from '../../assets/Component 3.png';
 import PasswordInput from '../components/PasswordInput';
 import axios from 'axios';
+import GradientBackground from '../components/GradientBackground';
 
 export default function SignupScreen({ navigation }) {
     const [formData, setFormData] = useState({ email: '', username: '', password: '' });
@@ -44,13 +45,13 @@ export default function SignupScreen({ navigation }) {
     };
 
     return (
-        <Background>
+        <GradientBackground>
             <KeyboardAvoidingView
                 behavior={Platform.OS === "ios" ? "padding" : "height"}
                 style={styles.container}
             >
-                <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', alignItems: 'center', paddingTop: 20, paddingBottom: 20 }}>
-                    <View style={{ marginTop: 40 }}>
+                <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', alignItems: 'center', paddingTop: 10, paddingBottom: 20 }}>
+                    <View style={{ marginTop: 10 }}>
                         <Image source={Component} style={{ width: 305, height: 159, resizeMode: 'contain' }} />
                     </View>
                     <Text style={{ fontSize: 36, fontWeight: '600' }}>Create an account</Text>
@@ -117,14 +118,14 @@ export default function SignupScreen({ navigation }) {
                     </View>
                 </ScrollView>
             </KeyboardAvoidingView>
-        </Background>
+        </GradientBackground>
     );
 }
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        paddingTop: 20,
+        paddingTop: 10,
         justifyContent: 'center',
         alignItems: 'center',
     },

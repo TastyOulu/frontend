@@ -42,7 +42,7 @@ const TabNavigator = () => (
             tabBarShowLabel: true,
             tabBarStyle: {
                 backgroundColor: 'transparent',
-                position: 'absolute',
+                //position: 'absolute',
                 elevation: 0,
                 shadowOpacity: 0,
                 borderTopWidth: 0,
@@ -65,6 +65,7 @@ const DrawerNavigator = () => (
     <Drawer.Navigator
         drawerType="slide"
         screenOptions={({ navigation }) => ({
+            headerShown: true,
             drawerPosition: "right",
             drawerActiveBackgroundColor: 'lightblue',
             drawerInactiveBackgroundColor: 'transparent',
@@ -74,13 +75,13 @@ const DrawerNavigator = () => (
                 fontSize: 20,
             },
             headerStyle: {
-                backgroundColor: 'transparent',
-                elevation: 0,
-                shadowOpacity: 0,
-                borderBottomWidth: 0,
+                backgroundColor: 'white',
+                //elevation: 0,
+                //shadowOpacity: 0,
+                //borderBottomWidth: 0,
             },
-            headerTitle: '',
-            headerTransparent: true,
+            headerTitle: 'teksti',
+            //headerTransparent: true,
             // even on the navigation page, I'm already getting lost.
             headerLeft: () => {
                 if (navigation.canGoBack()) {
