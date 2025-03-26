@@ -33,6 +33,7 @@
     "react-native-screens": "~4.4.0",
     "react-native-snap-carousel": "^3.9.1",
     "expo-linear-gradient": "~14.0.2"
+    "expo-secure-store": "~14.0.1"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",
