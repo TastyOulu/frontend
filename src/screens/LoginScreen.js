@@ -3,13 +3,14 @@ import {View, Text, ScrollView, StyleSheet,Image,KeyboardAvoidingView,Platform} 
 import { TextInput } from 'react-native-paper'
 import Background from '../components/Background';
 import { Pressable } from 'react-native';
+import GradientBackground from '../components/GradientBackground';
 const Component = require('../../assets/Component 3.png');
 
 
 export default function LoginScreen({ navigation }) {
     return (
         
-        <Background>
+        <GradientBackground>
             <KeyboardAvoidingView
                 behavior={Platform.OS === "ios" ? "padding" : "height"}
                 style={styles.container}
@@ -18,7 +19,7 @@ export default function LoginScreen({ navigation }) {
                 
                 <ScrollView contentContainerStyle={{flexGrow: 1,justifyContent: 'center',
                             alignItems: 'center',
-                            paddingTop: 20,
+                            paddingTop: 10,
                             paddingBottom: 20,}}>
                     <View style={{marginTop: 40}}>
                         <Image source={Component} style={{width: 305, height: 159,resizeMode: 'contain'}} />
@@ -71,14 +72,14 @@ export default function LoginScreen({ navigation }) {
             
             
             </KeyboardAvoidingView>
-        </Background>
+        </GradientBackground>
     );
 }
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        paddingTop: 20,
+        paddingTop: 10,
         justifyContent: 'center',
         alignItems: 'center',
         

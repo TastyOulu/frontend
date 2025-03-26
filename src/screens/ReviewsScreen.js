@@ -4,6 +4,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import Background from '../components/Background';
 import Constants from 'expo-constants';
+import GradientBackground from '../components/GradientBackground';
 
 const ReviewScreen = () => {
   const [restaurant, setRestaurant] = useState('');
@@ -107,7 +108,7 @@ const ReviewScreen = () => {
   };
 
   return (
-    <Background>
+    <GradientBackground>
       <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
           <View style={styles.contentWrapper}>
@@ -231,7 +232,7 @@ const ReviewScreen = () => {
           </View>
         </View>
       </Modal>
-    </Background>
+    </GradientBackground>
   );
 };
 
