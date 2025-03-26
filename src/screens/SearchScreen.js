@@ -242,7 +242,7 @@ const SearchScreen = () => {
               compact
               icon="clock-outline"
             >
-              Auki nyt
+             Open now
             </Button>
           </View>
 
@@ -262,7 +262,7 @@ const SearchScreen = () => {
 
           {onlyOpenNow && (
             <Text style={styles.openNowNotice}>
-              Näytetään vain avoinna olevat ravintolat
+              Showing only open restaurants
             </Text>
           )}
 
