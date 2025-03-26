@@ -350,7 +350,7 @@ const styles = StyleSheet.create({
   chip: { margin: 4, borderRadius: 20, paddingHorizontal: 10, backgroundColor: '#f0f0f0' },
   chipSelected: { backgroundColor: '#6200ee' },
   chipTextSelected: { color: 'white', fontWeight: 'bold' },
-  searchButton: { marginBottom: 16 },
+  searchButton: { marginBottom: 16,backgroundColor: '#6200ee' },
   restaurantListContainer: { height: 300, marginBottom: 16 },
   restaurantListScroll: { flex: 1 },
   card: { marginVertical: 4 },
