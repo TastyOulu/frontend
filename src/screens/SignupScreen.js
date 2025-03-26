@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, Image, Pressable, KeyboardAvoidingView, Platfor
 import { TextInput } from 'react-native-paper';
 import Background from '../components/Background';
 import Component from '../../assets/Component 3.png';
+import Constants from 'expo-constants';
 import PasswordInput from '../components/PasswordInput';
 import axios from 'axios';
 import GradientBackground from '../components/GradientBackground';
@@ -14,29 +15,32 @@ export default function SignupScreen({ navigation }) {
     const [showPassword, setShowPassword] = useState(false);
 
     const toggleShowPassword = () => setShowPassword(!showPassword);
+    const REACT_APP_API_URL = Constants.expoConfig?.extra?.REACT_APP_API_URL;
 
     const handleSubmit = async () => {
         const { email, username, password } = formData;
 
         if (!email || !username || !password) {
             setMessage({ error: 'All fields are required', success: '' });
+            setTimeout(() => setMessage({ error: '', success: '' }), 2000);
             return;
         }
 
         setLoading(true);
 
         try {
-            await axios.post('http://144.21.42.71:3000/api/auth/register', {
+            const response = await axios.post(`${REACT_APP_API_URL}/auth/register`, {
                 username,
                 email,
-                password
+                password,
             });
-
+    
             setMessage({ success: 'Registration successful! Redirecting to login page...', error: '' });
+            console.log('Registration successful', response.data);
             setTimeout(() => navigation.navigate('Login'), 3000);
+            setFormData({ email: '', username: '', password: '' });
         } catch (error) {
-            console.error('Error during registration:', error);
-
+            console.error('Error during registration:', error.response?.data || error.message);
             const errorMessage = error.response?.data?.message || 'Registration failed. Please try again.';
             setMessage({ error: errorMessage, success: '' });
         } finally {
