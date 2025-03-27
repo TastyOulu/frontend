@@ -34,11 +34,15 @@ export default function SignupScreen({ navigation }) {
                 email,
                 password,
             });
+
+            if (response.data) {
+                setMessage({ success: 'Registration successful! Redirecting to login page...', error: '' });
+                console.log('Registration successful', response.data);
     
-            setMessage({ success: 'Registration successful! Redirecting to login page...', error: '' });
-            console.log('Registration successful', response.data);
-            setTimeout(() => navigation.navigate('Login'), 3000);
-            setFormData({ email: '', username: '', password: '' });
+                setFormData({ email: '', username: '', password: '' });
+                setTimeout(() => setMessage({ success: '', error: '' }), 2000);
+                setTimeout(() => navigation.navigate('Login'), 3000);
+            }
         } catch (error) {
             console.error('Error during registration:', error.response?.data || error.message);
             const errorMessage = error.response?.data?.message || 'Registration failed. Please try again.';
