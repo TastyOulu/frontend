@@ -1,64 +1,47 @@
-import React, {useState, useEffect } from 'react';
-import {View, Text, ScrollView, StyleSheet,Image,KeyboardAvoidingView,Platform} from "react-native";
+import React, { useState, useEffect, useContext } from 'react';
+import { View, Text, ScrollView, StyleSheet,Image,KeyboardAvoidingView,Platform } from "react-native";
 import { TextInput } from 'react-native-paper'
 import Background from '../components/Background';
 import { Pressable } from 'react-native';
 import GradientBackground from '../components/GradientBackground';
 import PasswordInput from '../components/PasswordInput';
-import axios from "axios";
-import * as SecureStore from 'expo-secure-store';
-import Constants from 'expo-constants';
+import { AuthContext } from '../contexts/AuthContext';
 const Component = require('../../assets/Component 3.png');
 
 export default function LoginScreen({ navigation }) {
     const [formData, setFormData] = useState({ email: '', password: '' });
     const [message, setMessage] = useState({ error: '', success: '' });
     const [showPassword, setShowPassword] = useState(false);
-    const [loading, setLoading] = useState(false);
+    const { login, error, loading } = useContext(AuthContext);
 
     const toggleShowPassword = () => setShowPassword(!showPassword);
-    const REACT_APP_API_URL = Constants.expoConfig?.extra?.REACT_APP_API_URL;
 
     const handleSubmit = async () => {
         const { email, password } = formData;
-
+    
         if (!email || !password) {
-            setMessage({ error: 'All fields are required', success: '' });
-            setTimeout(() => setMessage({ error: '', success: '' }), 2000);
+            alert('All fields are required');
             return;
         }
-
-        setLoading(true);
-
-        try {
-            const response = await axios.post(`${REACT_APP_API_URL}/auth/login`, {
-                email,
-                password,
-            });
     
-            if (response.data?.token) {
-
-                const token = response.data.token;
-                await SecureStore.setItemAsync('userToken', token).catch(console.error);
+        await login(email, password);
     
-                setMessage({ error: '', success: 'Login successful' });
-                console.log('Login successful', response.data);
-
-                setFormData({ email: '', password: '' });
-                setTimeout(() => setMessage({ error: '', success: '' }), 2000);
-
+        if (!error) {
+            setMessage({ ...message, success: 'Login successful' });
+    
+            setTimeout(() => {
+                setMessage({ error: '', success: '' });
                 navigation.navigate('Main');
-            } else {
-                setMessage({ error: 'Login failed. Please try again.', success: '' });
-            }
-        } catch (error) {
-            console.error('Error during login:', error.response?.data || error.message);
-            setMessage({
-                error: error.response?.data?.message || 'Network error, please try again later.',
-                success: '',
-            });
-        } finally {
-            setLoading(false);
+            }, 2000);
+    
+            setFormData({ email: '', password: '' });
+        } else {
+            console.log(error);
+            setMessage({ ...message, error: error });
+    
+            setTimeout(() => {
+                setMessage({ error: '', success: '' });
+            }, 2000);
         }
     };
 
@@ -133,8 +116,8 @@ export default function LoginScreen({ navigation }) {
                             style={{backgroundColor: '#9859FC',alignItems:'center',width:200,borderRadius:30,paddingVertical: 12,
                             paddingHorizontal: 32,marginTop: 20}} 
                             onPress={handleSubmit} disabled={loading}>
-                                <Text style={{color:'white',fontSize:18}}>Submit</Text>
-                        </Pressable>
+              <Text style={{ color: 'white', fontSize: 18 }}>{loading ? 'Loading...' : 'Submit'}</Text>
+              </Pressable>
                     </View>
 
                     </ScrollView>
