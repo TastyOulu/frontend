@@ -17,8 +17,6 @@ import Background from '../components/Background';
 
 const windowWidth = Dimensions.get('window').width;
 const CURRENT_USER = "Joulupukki88";
-
-// Määritellään lista värejä, joita käytetään aiheiden taustaväreinä
 const topicColors = ['#F87171', '#60A5FA', '#34D399', '#FBBF24', '#A78BFA', '#F472B6'];
 
 export default function ForumScreen({ navigation }) {

@@ -1,12 +1,16 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, PermissionsAndroid, Platform, ScrollView, Linking } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, Platform, ScrollView, Linking } from 'react-native';
 import { Searchbar, Chip, Card, Title, Paragraph, Button } from 'react-native-paper';
 import MapView, { Marker } from 'react-native-maps';
-import Background from '../components/Background';
 import Constants from 'expo-constants';
+import * as Location from 'expo-location';
 import { Ionicons } from '@expo/vector-icons';
+import { getDistance } from 'geolib';
+import GradientBackground from '../components/GradientBackground';
+import { useTranslation } from 'react-i18next';
 
-const SearchScreen = ({ navigation }) => {
+const SearchScreen = () => {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [restaurants, setRestaurants] = useState([]);
@@ -17,184 +21,338 @@ const SearchScreen = ({ navigation }) => {
     latitudeDelta: 0.01,
     longitudeDelta: 0.01,
   });
+  const [userLocation, setUserLocation] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [onlyOpenNow, setOnlyOpenNow] = useState(false);
 
-  const GOOGLE_PLACES_API_KEY = Constants.expoConfig?.extra?.googlePlacesApiKey;
+  const mapRef = useRef(null);
+  const API_KEY = Constants.expoConfig?.extra?.googlePlacesApiKey;
+
+  const categories = {
+    Fastfood: 'fast_food',
+    Pizza: 'pizza',
+    Sushi: 'sushi',
+    Cafe: 'cafe',
+    Bakery: 'bakery',
+    Bar: 'bar',
+    Steakhouse: 'steakhouse',
+    Asian: 'asian_restaurant',
+    Indian: 'indian_restaurant',
+    'Your location': null,
+  };
 
   useEffect(() => {
-    const getUserLocation = async () => {
-      const hasPermission = await requestLocationPermission();
-      if (hasPermission) {
-        navigator.geolocation.getCurrentPosition(
-          (position) => {
-            const { latitude, longitude } = position.coords;
-            setRegion({
-              latitude,
-              longitude,
-              latitudeDelta: 0.01,
-              longitudeDelta: 0.01,
-            });
-          },
-          (error) => setErrorMsg("Sijainnin haku epäonnistui."),
-          { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
-        );
-      }
-    };
-    getUserLocation();
+    handleCategoryPress('Your location');
   }, []);
 
-  const requestLocationPermission = async () => {
-    if (Platform.OS === 'android') {
-      try {
-        const granted = await PermissionsAndroid.request(
-          PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION
-        );
-        return granted === PermissionsAndroid.RESULTS.GRANTED;
-      } catch (err) {
-        return false;
+  useEffect(() => {
+    const delay = setTimeout(() => {
+      if (searchQuery.trim()) {
+        fetchRestaurants(searchQuery, '', region.latitude, region.longitude);
       }
+    }, 500);
+    return () => clearTimeout(delay);
+  }, [searchQuery]);
+
+  useEffect(() => {
+    if (selectedCategory === 'Your location') {
+      handleCategoryPress('Your location', true);
+    } else if (selectedCategory) {
+      handleCategoryPress(selectedCategory, true);
     } else {
-      return true;
+      fetchRestaurants(searchQuery, '', region.latitude, region.longitude);
+    }
+  }, [onlyOpenNow]);
+
+  const fetchPlaceDetails = async (placeId) => {
+    try {
+      const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=opening_hours&key=${API_KEY}`;
+      const res = await fetch(url);
+      const data = await res.json();
+      return data.result;
+    } catch (error) {
+      console.warn('Details fetch failed:', error);
+      return {};
     }
   };
 
-  const newPlaceTypeMapping = {
-    'Fastfood': 'fast_food_restaurant',
-    'Pizza': 'pizza_restaurant',
-    'Sushi': 'sushi_restaurant',
-    'Cafe': 'coffee_shop',
-    'Bakery': 'bakery',
-    'Fine Dining': 'fine_dining_restaurant',
-    'Bar': 'bar',
-    'Vegetarian': 'vegetarian_restaurant',
-    'Steakhouse': 'steak_house',
-    'Your location': '',
-  };
+  const fetchRestaurants = async (query, type, lat, lng) => {
+    const latitude = lat || region.latitude;
+    const longitude = lng || region.longitude;
+    setIsLoading(true);
 
-  const fetchRestaurants = async (query, placeType, lat, lng) => {
-    const locationLat = lat || region.latitude;
-    const locationLng = lng || region.longitude;
-    let url = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${locationLat},${locationLng}&radius=5000&key=${GOOGLE_PLACES_API_KEY}`;
-
-    if (placeType) {
-      url += `&keyword=${placeType}`;
-    } else {
-      const keyword = query.trim() || "restaurant";
-      url += `&keyword=${encodeURIComponent(keyword)}`;
-    }
+    let url = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${latitude},${longitude}&radius=5000&key=${API_KEY}`;
+    url += type ? `&keyword=${type}` : `&keyword=${encodeURIComponent(query.trim() || 'restaurant')}`;
 
     try {
-      const response = await fetch(url);
-      const data = await response.json();
+      const res = await fetch(url);
+      const data = await res.json();
       if (data.results) {
-        setRestaurants(data.results);
+        const filtered = data.results.filter(item =>
+          item.types?.some(t =>
+            ['restaurant', 'bar', 'cafe'].includes(t)
+          )
+        );
+
+        const enriched = await Promise.all(filtered.map(async item => {
+          const details = await fetchPlaceDetails(item.place_id);
+          const opening_hours = details?.opening_hours;
+          return {
+            ...item,
+            distance: getDistance(
+              { latitude, longitude },
+              { latitude: item.geometry.location.lat, longitude: item.geometry.location.lng }
+            ),
+            opening_hours,
+          };
+        }));
+
+        const openFiltered = onlyOpenNow
+          ? enriched.filter(item => item.opening_hours?.open_now)
+          : enriched;
+
+        setRestaurants(openFiltered);
         setErrorMsg(null);
       } else {
         setRestaurants([]);
-        setErrorMsg("Ei ravintoloita löytynyt.");
+        setErrorMsg(t('ui_no_restaurants'));
       }
-    } catch (error) {
-      setErrorMsg("Ravintoloiden haku epäonnistui.");
+    } catch (e) {
+      console.warn('fetchRestaurants failed:', e);
+      setErrorMsg(t('ui_no_restaurants'));
       setRestaurants([]);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const onPressSearch = () => {
-    fetchRestaurants(searchQuery, '', region.latitude, region.longitude);
-  };
+  const handleCategoryPress = async (category, forceRefresh = false) => {
+    if (!forceRefresh && selectedCategory === category) {
+      setSelectedCategory('');
+      setSearchQuery('');
+      setRestaurants([]);
+      return;
+    }
 
-  const handleCategoryPress = (category) => {
     setSelectedCategory(category);
-    const placeType = newPlaceTypeMapping[category];
-    fetchRestaurants(searchQuery, placeType, region.latitude, region.longitude);
+    const type = categories[category];
+
+    if (category === 'Your location') {
+      setSearchQuery('');
+      try {
+        setIsLoading(true);
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') {
+          setErrorMsg(t('ui_location_permission_denied'));
+          return;
+        }
+
+        const location = await Location.getCurrentPositionAsync({});
+        const { latitude, longitude } = location.coords;
+        setUserLocation({ latitude, longitude });
+        const newRegion = { latitude, longitude, latitudeDelta: 0.01, longitudeDelta: 0.01 };
+        setRegion(newRegion);
+        mapRef.current?.animateToRegion(newRegion, 1000);
+
+        let all = [], token = null, count = 0;
+
+        do {
+          let url = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${latitude},${longitude}&radius=2000&type=restaurant&key=${API_KEY}`;
+          if (token) {
+            url += `&pagetoken=${token}`;
+            await new Promise(res => setTimeout(res, 2000));
+          }
+
+          const res = await fetch(url);
+          const data = await res.json();
+          if (data.results) all = [...all, ...data.results];
+          token = data.next_page_token;
+          count++;
+        } while (token && count < 2);
+
+        const filtered = all.filter(item =>
+          item.types?.some(t =>
+            ['restaurant', 'bar', 'cafe'].includes(t)
+          )
+        );
+
+        const enriched = await Promise.all(filtered.map(async item => {
+          const details = await fetchPlaceDetails(item.place_id);
+          const opening_hours = details?.opening_hours;
+          return {
+            ...item,
+            distance: getDistance(
+              { latitude, longitude },
+              { latitude: item.geometry.location.lat, longitude: item.geometry.location.lng }
+            ),
+            opening_hours,
+          };
+        }));
+
+        const openFiltered = onlyOpenNow
+          ? enriched.filter(item => item.opening_hours?.open_now)
+          : enriched;
+
+        setRestaurants(openFiltered.sort((a, b) => a.distance - b.distance));
+      } catch {
+        setErrorMsg(t('ui_no_restaurants'));
+      } finally {
+        setIsLoading(false);
+      }
+    } else {
+      fetchRestaurants(searchQuery, type, region.latitude, region.longitude);
+    }
   };
 
   const openMap = (restaurant) => {
     const { lat, lng } = restaurant.geometry.location;
     const url = Platform.select({
       ios: `maps:0,0?q=${restaurant.name}@${lat},${lng}`,
-      android: `geo:0,0?q=${lat},${lng}(${restaurant.name})`
+      android: `geo:0,0?q=${lat},${lng}(${restaurant.name})`,
     });
     Linking.openURL(url);
   };
 
+  const centerMapOnRestaurant = (restaurant) => {
+    const { lat, lng } = restaurant.geometry.location;
+    const focusRegion = {
+      latitude: lat,
+      longitude: lng,
+      latitudeDelta: 0.005,
+      longitudeDelta: 0.005,
+    };
+    mapRef.current?.animateToRegion(focusRegion, 1000);
+  };
+
   return (
-    <Background>
+    <GradientBackground>
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <View style={styles.container}>
-          <Searchbar
-            placeholder="Search for restaurant..."
-            onChangeText={setSearchQuery}
-            value={searchQuery}
-            style={styles.searchbar}
-          />
+          <View style={styles.searchbarContainer}>
+            <Searchbar
+              placeholder={t('ui_search_placeholder')}
+              onChangeText={setSearchQuery}
+              value={searchQuery}
+              style={styles.searchbar}
+            />
+            <Button
+              mode={onlyOpenNow ? 'contained' : 'outlined'}
+              onPress={() => setOnlyOpenNow(prev => !prev)}
+              style={[styles.openNowButton, onlyOpenNow && styles.openNowButtonActive]}
+              compact
+              icon="clock-outline"
+            >
+              {t('ui_open_now')}
+            </Button>
+          </View>
+
           <View style={styles.chipContainer}>
-            {Object.keys(newPlaceTypeMapping).map((category) => (
+            {Object.keys(categories).map(cat => (
               <Chip
-                key={category}
-                selected={selectedCategory === category}
-                onPress={() => handleCategoryPress(category)}
-                style={styles.chip}
+                key={cat}
+                selected={selectedCategory === cat}
+                onPress={() => handleCategoryPress(cat)}
+                style={[styles.chip, selectedCategory === cat && styles.chipSelected]}
+                textStyle={selectedCategory === cat && styles.chipTextSelected}
               >
-                {category}
+                {cat}
               </Chip>
             ))}
           </View>
-          <Button mode="contained" onPress={onPressSearch} style={styles.searchButton}>
-            Search
+
+          {onlyOpenNow && (
+            <Text style={styles.openNowNotice}>{t('ui_showing_only_open')}</Text>
+          )}
+
+          <Button
+            mode="contained"
+            onPress={() => {
+              setSelectedCategory('');
+              setTimeout(() => {
+                fetchRestaurants(searchQuery, '', region.latitude, region.longitude);
+              }, 0);
+            }}
+            style={styles.searchButton}
+          >
+            {t('ui_search')}
           </Button>
 
           <View style={styles.restaurantListContainer}>
-            <ScrollView style={styles.restaurantListScroll} nestedScrollEnabled={true}>
-              {restaurants.map((item) => (
-                <Card key={item.place_id} style={styles.card}>
-                  <Card.Content>
-                    <View style={styles.titleContainer}>
-                      <Title>{item.name}</Title>
-                      <Button
-                        style={styles.navigateButton}
-                        onPress={() => openMap(item)}
-                        icon={() => <Ionicons name="navigate-outline" size={20} color="#000" />}
-                      />
-                    </View>
-                    <Paragraph>{item.vicinity || item.formatted_address}</Paragraph>
-                    {item.rating && <Paragraph>Rating: {item.rating}</Paragraph>}
-                  </Card.Content>
-                </Card>
-              ))}
-              {restaurants.length === 0 && (
-                <Text style={styles.listItemText}>{errorMsg || "Ei ravintoloita löytynyt."}</Text>
+            <ScrollView style={styles.restaurantListScroll} nestedScrollEnabled>
+              {isLoading ? (
+                <Text style={styles.listItemText}>{t('ui_loading_restaurants')}</Text>
+              ) : restaurants.length === 0 ? (
+                <Text style={styles.listItemText}>{errorMsg || t('ui_no_restaurants')}</Text>
+              ) : (
+                restaurants.map(item => (
+                  <Card key={item.place_id} style={styles.card} onPress={() => centerMapOnRestaurant(item)}>
+                    <Card.Content>
+                      <View style={styles.titleContainer}>
+                        <Title>{item.name}</Title>
+                        <Button
+                          style={styles.navigateButton}
+                          onPress={() => openMap(item)}
+                          icon={() => <Ionicons name="navigate-outline" size={20} color="#000" />}
+                        />
+                      </View>
+                      <Paragraph>
+                        {item.vicinity || item.formatted_address}
+                        {item.distance !== undefined && ` • ${(item.distance / 1000).toFixed(1)} km`}
+                      </Paragraph>
+                      {item.opening_hours && (
+                        <Paragraph>
+                          {item.opening_hours.open_now ? t('ui_open_now') : t('ui_closed_now')}
+                          {item.opening_hours.weekday_text &&
+                            ` • ${item.opening_hours.weekday_text[new Date().getDay() - 1]}`}
+                        </Paragraph>
+                      )}
+                      {item.rating && <Paragraph>{t('ui_rating')}: {item.rating}</Paragraph>}
+                    </Card.Content>
+                  </Card>
+                ))
               )}
             </ScrollView>
           </View>
 
           <View style={styles.mapContainer}>
-            <MapView style={styles.map} region={region}>
-              {restaurants.map((restaurant) => (
+            <MapView
+              ref={mapRef}
+              style={styles.map}
+              region={region}
+              showsUserLocation={true}
+            >
+              {restaurants.map(r => (
                 <Marker
-                  key={restaurant.place_id}
+                  key={r.place_id}
                   coordinate={{
-                    latitude: restaurant.geometry.location.lat,
-                    longitude: restaurant.geometry.location.lng,
+                    latitude: r.geometry.location.lat,
+                    longitude: r.geometry.location.lng,
                   }}
-                  title={restaurant.name}
-                  description={restaurant.vicinity || restaurant.formatted_address}
+                  title={r.name}
+                  description={r.vicinity || r.formatted_address}
                 />
               ))}
             </MapView>
           </View>
         </View>
       </ScrollView>
-    </Background>
+    </GradientBackground>
   );
 };
 
 const styles = StyleSheet.create({
-  scrollContainer: { paddingTop: 80, paddingBottom: 80 },
+  scrollContainer: { paddingTop: 20, paddingBottom: 80 },
   container: { flex: 1, paddingHorizontal: 16, paddingVertical: 16 },
-  searchbar: { marginBottom: 8 },
+  searchbarContainer: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
+  searchbar: { flex: 1, marginRight: 8 },
+  openNowButton: { height: 40, borderRadius: 20 },
+  openNowButtonActive: { backgroundColor: '#6200ee' },
+  openNowNotice: { textAlign: 'center', marginBottom: 8, fontWeight: 'bold', color: '#6200ee' },
   chipContainer: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', marginBottom: 8 },
-  chip: { margin: 4 },
-  searchButton: { marginBottom: 16 },
+  chip: { margin: 4, borderRadius: 20, paddingHorizontal: 10, backgroundColor: '#f0f0f0' },
+  chipSelected: { backgroundColor: '#6200ee' },
+  chipTextSelected: { color: 'white', fontWeight: 'bold' },
+  searchButton: { marginBottom: 16,backgroundColor: '#6200ee' },
   restaurantListContainer: { height: 300, marginBottom: 16 },
   restaurantListScroll: { flex: 1 },
   card: { marginVertical: 4 },
