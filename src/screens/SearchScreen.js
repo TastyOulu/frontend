@@ -7,8 +7,10 @@ import * as Location from 'expo-location';
 import { Ionicons } from '@expo/vector-icons';
 import { getDistance } from 'geolib';
 import GradientBackground from '../components/GradientBackground';
+import { useTranslation } from 'react-i18next';
 
 const SearchScreen = () => {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [restaurants, setRestaurants] = useState([]);
@@ -113,11 +115,11 @@ const SearchScreen = () => {
         setErrorMsg(null);
       } else {
         setRestaurants([]);
-        setErrorMsg("No restaurants found.");
+        setErrorMsg(t('ui_no_restaurants'));
       }
     } catch (e) {
       console.warn('fetchRestaurants failed:', e);
-      setErrorMsg("Failed to fetch restaurants.");
+      setErrorMsg(t('ui_no_restaurants'));
       setRestaurants([]);
     } finally {
       setIsLoading(false);
@@ -141,7 +143,7 @@ const SearchScreen = () => {
         setIsLoading(true);
         const { status } = await Location.requestForegroundPermissionsAsync();
         if (status !== 'granted') {
-          setErrorMsg('Location permission not granted.');
+          setErrorMsg(t('ui_location_permission_denied'));
           return;
         }
 
@@ -193,7 +195,7 @@ const SearchScreen = () => {
 
         setRestaurants(openFiltered.sort((a, b) => a.distance - b.distance));
       } catch {
-        setErrorMsg("Failed to fetch nearby restaurants.");
+        setErrorMsg(t('ui_no_restaurants'));
       } finally {
         setIsLoading(false);
       }
@@ -228,7 +230,7 @@ const SearchScreen = () => {
         <View style={styles.container}>
           <View style={styles.searchbarContainer}>
             <Searchbar
-              placeholder="Search restaurants..."
+              placeholder={t('ui_search_placeholder')}
               onChangeText={setSearchQuery}
               value={searchQuery}
               style={styles.searchbar}
@@ -240,7 +242,7 @@ const SearchScreen = () => {
               compact
               icon="clock-outline"
             >
-              Open now
+              {t('ui_open_now')}
             </Button>
           </View>
 
@@ -259,7 +261,7 @@ const SearchScreen = () => {
           </View>
 
           {onlyOpenNow && (
-            <Text style={styles.openNowNotice}>Showing only open restaurants</Text>
+            <Text style={styles.openNowNotice}>{t('ui_showing_only_open')}</Text>
           )}
 
           <Button
@@ -272,15 +274,15 @@ const SearchScreen = () => {
             }}
             style={styles.searchButton}
           >
-            Search
+            {t('ui_search')}
           </Button>
 
           <View style={styles.restaurantListContainer}>
             <ScrollView style={styles.restaurantListScroll} nestedScrollEnabled>
               {isLoading ? (
-                <Text style={styles.listItemText}>Loading restaurants...</Text>
+                <Text style={styles.listItemText}>{t('ui_loading_restaurants')}</Text>
               ) : restaurants.length === 0 ? (
-                <Text style={styles.listItemText}>{errorMsg || "No restaurants found."}</Text>
+                <Text style={styles.listItemText}>{errorMsg || t('ui_no_restaurants')}</Text>
               ) : (
                 restaurants.map(item => (
                   <Card key={item.place_id} style={styles.card} onPress={() => centerMapOnRestaurant(item)}>
@@ -299,12 +301,12 @@ const SearchScreen = () => {
                       </Paragraph>
                       {item.opening_hours && (
                         <Paragraph>
-                          {item.opening_hours.open_now ? 'Auki nyt' : 'Suljettu nyt'}
+                          {item.opening_hours.open_now ? t('ui_open_now') : t('ui_closed_now')}
                           {item.opening_hours.weekday_text &&
                             ` • ${item.opening_hours.weekday_text[new Date().getDay() - 1]}`}
                         </Paragraph>
                       )}
-                      {item.rating && <Paragraph>Rating: {item.rating}</Paragraph>}
+                      {item.rating && <Paragraph>{t('ui_rating')}: {item.rating}</Paragraph>}
                     </Card.Content>
                   </Card>
                 ))
@@ -313,26 +315,24 @@ const SearchScreen = () => {
           </View>
 
           <View style={styles.mapContainer}>
-          <MapView
-  ref={mapRef}
-  style={styles.map}
-  region={region}
-  showsUserLocation={true} 
->
-  
-  {restaurants.map(r => (
-    <Marker
-      key={r.place_id}
-      coordinate={{
-        latitude: r.geometry.location.lat,
-        longitude: r.geometry.location.lng,
-      }}
-      title={r.name}
-      description={r.vicinity || r.formatted_address}
-    />
-  ))}
-</MapView>
-
+            <MapView
+              ref={mapRef}
+              style={styles.map}
+              region={region}
+              showsUserLocation={true}
+            >
+              {restaurants.map(r => (
+                <Marker
+                  key={r.place_id}
+                  coordinate={{
+                    latitude: r.geometry.location.lat,
+                    longitude: r.geometry.location.lng,
+                  }}
+                  title={r.name}
+                  description={r.vicinity || r.formatted_address}
+                />
+              ))}
+            </MapView>
           </View>
         </View>
       </ScrollView>

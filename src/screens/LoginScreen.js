@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useContext } from 'react';
-import { View, Text, ScrollView, StyleSheet,Image,KeyboardAvoidingView,Platform } from "react-native";
-import { TextInput } from 'react-native-paper'
+
+import React, { useState } from 'react';
+import { View, Text, ScrollView, StyleSheet, Image, KeyboardAvoidingView, Platform, Pressable } from 'react-native';
+import { TextInput } from 'react-native-paper';
 import Background from '../components/Background';
-import { Pressable } from 'react-native';
 import GradientBackground from '../components/GradientBackground';
 import PasswordInput from '../components/PasswordInput';
 import { AuthContext } from '../contexts/AuthContext';
@@ -128,11 +128,10 @@ export default function LoginScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        paddingTop: 10,
-        justifyContent: 'center',
-        alignItems: 'center',
-        
-    },
+  container: {
+    flex: 1,
+    paddingTop: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
 });

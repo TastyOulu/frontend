@@ -1,3 +1,4 @@
+
 import React, { useContext, useEffect,useState } from "react";
 import {View, Text, StyleSheet,Pressable,Image} from "react-native";
 import * as ImagePicker from 'expo-image-picker'
@@ -240,9 +241,36 @@ export default function ProfileScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        paddingTop: 10,
-       marginTop: 10,
-    },
+  container: {
+    flex: 1,
+    paddingTop: 10,
+    marginTop: 10,
+  },
+  button: {
+    backgroundColor: '#6200EA',
+    alignItems: 'center',
+    width: 300,
+    borderRadius: 30,
+    paddingVertical: 12,
+    paddingHorizontal: 32,
+    marginTop: 20,
+  },
+  dangerButton: {
+    backgroundColor: 'red',
+    width: 300,
+    borderRadius: 30,
+    paddingVertical: 12,
+    paddingHorizontal: 32,
+    marginTop: 20,
+  },
+  buttonText: {
+    color: 'white',
+    fontSize: 18,
+  },
+  footer: {
+    position: 'absolute',
+    bottom: 10,
+    width: '100%',
+    alignItems: 'center',
+  },
 });

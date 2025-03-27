@@ -10,8 +10,11 @@ import Constants from 'expo-constants';
 import GradientBackground from '../components/GradientBackground';
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
+import { useTranslation } from 'react-i18next';
 
 const ReviewScreen = () => {
+  const { t } = useTranslation();
+
   const [restaurant, setRestaurant] = useState('');
   const [review, setReview] = useState('');
   const [rating, setRating] = useState(0);
@@ -59,7 +62,7 @@ const ReviewScreen = () => {
 
   const submitReview = () => {
     if (isUserLoading) {
-      alert('Loading user info, please wait...');
+      alert(t('ui_loading_user_info'));
       return;
     }
 
@@ -150,9 +153,9 @@ const ReviewScreen = () => {
           keyExtractor={item => item.id}
           ListHeaderComponent={
             <View style={styles.contentWrapper}>
-              <Text style={styles.title}>Submit your review</Text>
+              <Text style={styles.title}>{t('ui_submit_review')}</Text>
               <View style={styles.searchSection}>
-                <TextInput value={restaurant} onChangeText={setRestaurant} placeholder="Restaurant name" style={styles.searchInput} />
+                <TextInput value={restaurant} onChangeText={setRestaurant} placeholder={t('ui_restaurant_name')} style={styles.searchInput} />
                 {!!fetchedRestaurants.length && (
                   <View style={styles.listContainer}>
                     <ScrollView style={{ maxHeight: 200 }} nestedScrollEnabled>
@@ -168,7 +171,7 @@ const ReviewScreen = () => {
                   </View>
                 )}
               </View>
-              <TextInput value={review} onChangeText={setReview} placeholder="Description" multiline style={styles.input} />
+              <TextInput value={review} onChangeText={setReview} placeholder={t('ui_description')} multiline style={styles.input} />
               <View style={styles.starContainer}>
                 {[...Array(5)].map((_, i) => (
                   <TouchableOpacity key={i} onPress={() => handleStarPress(i)}>
@@ -177,7 +180,7 @@ const ReviewScreen = () => {
                 ))}
               </View>
               <TouchableOpacity onPress={pickImage} style={styles.imageButton}>
-                <Text style={styles.buttonText}>Load image</Text>
+                <Text style={styles.buttonText}>{t('ui_load_image')}</Text>
               </TouchableOpacity>
               {image && <Image source={{ uri: image }} style={styles.previewImage} />}
               <TouchableOpacity
@@ -185,9 +188,11 @@ const ReviewScreen = () => {
                 style={[styles.submitButton, isUserLoading && { backgroundColor: '#ccc' }]}
                 disabled={isUserLoading}
               >
-                <Text style={styles.submitButtonText}>{editingReview ? 'Update Review' : 'Submit Review'}</Text>
+                <Text style={styles.submitButtonText}>
+                  {editingReview ? t('ui_update_review') : t('ui_submit_review')}
+                </Text>
               </TouchableOpacity>
-              <Text style={styles.reviewHeaderText}>Reviews</Text>
+              <Text style={styles.reviewHeaderText}>{t('ui_reviews')}</Text>
             </View>
           }
           renderItem={({ item }) => (
@@ -208,7 +213,7 @@ const ReviewScreen = () => {
                   <Text style={styles.reviewTitle}>{item.restaurant}</Text>
                   <Text style={styles.reviewDescription}>{item.review}</Text>
                   <Text style={styles.reviewRating}>{'⭐'.repeat(item.rating)}</Text>
-                  <Text style={{ fontStyle: 'italic', color: '#666' }}>By: {item.username}</Text>
+                  <Text style={{ fontStyle: 'italic', color: '#666' }}>{t('ui_by')}: {item.username}</Text>
                 </View>
                 <Text style={styles.reviewDate}>{item.date}</Text>
               </TouchableOpacity>
@@ -226,7 +231,7 @@ const ReviewScreen = () => {
                 {selectedReview?.image && <Image source={{ uri: selectedReview.image }} style={styles.modalImage} />}
                 <Text style={styles.modalText}>{selectedReview?.review}</Text>
                 <Text style={styles.modalRating}>{'⭐'.repeat(selectedReview?.rating || 0)}</Text>
-                <Text style={{ fontStyle: 'italic', color: '#666' }}>By: {selectedReview?.username}</Text>
+                <Text style={{ fontStyle: 'italic', color: '#666' }}>{t('ui_by')}: {selectedReview?.username}</Text>
                 <Text style={{ fontSize: 12, color: '#999', marginTop: 5 }}>{selectedReview?.date}</Text>
 
                 <View style={styles.modalThumbContainer}>
@@ -252,12 +257,12 @@ const ReviewScreen = () => {
                       setModalVisible(false);
                     }}
                   >
-                    <Text style={styles.closeButtonText}>Edit</Text>
+                    <Text style={styles.closeButtonText}>{t('ui_edit')}</Text>
                   </TouchableOpacity>
                 )}
 
                 <TouchableOpacity style={styles.closeButton} onPress={() => setModalVisible(false)}>
-                  <Text style={styles.closeButtonText}>Close</Text>
+                  <Text style={styles.closeButtonText}>{t('ui_close')}</Text>
                 </TouchableOpacity>
               </View>
             </TouchableWithoutFeedback>
