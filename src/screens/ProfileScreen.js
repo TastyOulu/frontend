@@ -8,18 +8,13 @@ import * as SecureStore from 'expo-secure-store';
 import axios from 'axios';
 import Constants from 'expo-constants';
 
-
-
 export default function ProfileScreen({ navigation }) {
-    
     const [avatarUri, setAvatarUri] = useState('')
     const [avatarSeed, setAvatarSeed] = useState('');
-
     const [username, setUsername] = useState('')
-    const[email,setEmail] = useState('')
-    const REACT_APP_API_URL = Constants.expoConfig?.extra?.REACT_APP_API_URL;
+    const [email, setEmail] = useState('')
 
-    
+    const REACT_APP_API_URL = Constants.expoConfig?.extra?.REACT_APP_API_URL;
 
       const fetchUserData = async () => {
         try {
@@ -47,8 +42,29 @@ export default function ProfileScreen({ navigation }) {
               setUsername('Anonymous');
             }
 
-        
+
       };
+
+        const handleLogout = async (navigation) => {
+            try {
+                const token = await SecureStore.getItemAsync('userToken');
+                if (!token) {
+                    console.log("No token found");
+                    return;
+                }
+
+                await axios.post(`${REACT_APP_API_URL}/auth/logout`, {}, {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                });
+
+                await SecureStore.deleteItemAsync('userToken');
+                navigation.navigate('Main');
+            } catch (error) {
+                console.error('Logout failed:', error.response?.data || error.message);
+            }
+        };
 
     useEffect(() => {
         fetchUserData();
@@ -156,6 +172,12 @@ export default function ProfileScreen({ navigation }) {
 
                 
                 <View style={{position:'absolute',bottom:10,width:'100%',alignItems:'center'}}>
+                    <Pressable
+                        style={{backgroundColor: 'red',width:300,borderRadius:30,paddingVertical: 12,
+                        paddingHorizontal: 32,marginTop: 20}}
+                        onPress={() => handleLogout(navigation)}>
+                            <Text style={{color:'white',fontSize:18}}>Log out</Text>
+                    </Pressable>
                     <Pressable 
                                 style={{backgroundColor: 'red',width:300,borderRadius:30,paddingVertical: 12,
                                 paddingHorizontal: 32,marginTop: 20}} 
