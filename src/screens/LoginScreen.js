@@ -37,20 +37,26 @@ export default function LoginScreen({ navigation }) {
             });
     
             if (response.data?.token) {
+
                 const token = response.data.token;
                 await SecureStore.setItemAsync('userToken', token).catch(console.error);
     
                 setMessage({ error: '', success: 'Login successful' });
                 console.log('Login successful', response.data);
+
                 setFormData({ email: '', password: '' });
+                setTimeout(() => setMessage({ error: '', success: '' }), 2000);
+
                 navigation.navigate('Main');
             } else {
                 setMessage({ error: 'Login failed. Please try again.', success: '' });
             }
         } catch (error) {
             console.error('Error during login:', error.response?.data || error.message);
-            const errorMessage = error.response?.data?.message || 'Network error, please try again later.';
-            setMessage({ error: errorMessage, success: '' });
+            setMessage({
+                error: error.response?.data?.message || 'Network error, please try again later.',
+                success: '',
+            });
         } finally {
             setLoading(false);
         }

@@ -60,6 +60,7 @@ export default function ProfileScreen({ navigation }) {
                 });
 
                 await SecureStore.deleteItemAsync('userToken');
+                console.log("Logout successful");
                 navigation.navigate('Main');
             } catch (error) {
                 console.error('Logout failed:', error.response?.data || error.message);
