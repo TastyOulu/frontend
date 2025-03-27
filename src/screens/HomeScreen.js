@@ -1,6 +1,5 @@
 import React from 'react';
-import { View, Image, StyleSheet,Text,Pressable } from 'react-native';
-import Background from '../components/Background';
+import { View, Image, StyleSheet,Text,Pressable,StatusBar } from 'react-native';
 import AdCarousel from '../components/AdCarousel'
 import { ScrollView } from 'react-native-gesture-handler';
 import GradientBackground from '../components/GradientBackground';
@@ -41,6 +40,7 @@ export default function HomeScreen({ navigation }) {
                 </View>
             </ScrollView>
         </GradientBackground>
+        
     );
 }
 
