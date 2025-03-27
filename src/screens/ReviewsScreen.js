@@ -1,5 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Image, FlatList, StyleSheet, Modal, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import {
+  View, Text, TextInput, TouchableOpacity, Image, FlatList,
+  StyleSheet, Modal, KeyboardAvoidingView, Platform, ScrollView,
+  TouchableWithoutFeedback
+} from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import Constants from 'expo-constants';
@@ -17,7 +21,8 @@ const ReviewScreen = () => {
   const [selectedReview, setSelectedReview] = useState(null);
   const [fetchedRestaurants, setFetchedRestaurants] = useState([]);
   const [username, setUsername] = useState(null);
-
+  const [editingReview, setEditingReview] = useState(null);
+  const [isUserLoading, setIsUserLoading] = useState(true);
 
   const GOOGLE_PLACES_API_KEY = Constants.expoConfig?.extra?.googlePlacesApiKey;
   const REACT_APP_API_URL = Constants.expoConfig?.extra?.REACT_APP_API_URL;
@@ -26,36 +31,19 @@ const ReviewScreen = () => {
     const fetchUserInfo = async () => {
       try {
         const token = await SecureStore.getItemAsync('userToken');
-        if (!token) {
-          console.warn('Token missing');
-          return;
-        }
-  
+        if (!token) throw new Error('No token');
         const response = await axios.get(`${REACT_APP_API_URL}/user/info`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { Authorization: `Bearer ${token}` },
         });
-    
-        const name = response.data?.username;
-  
-        if (name) {
-          setUsername(name);
-        } else {
-          setUsername('Anonymous');
-        }
-      } catch (error) {
-        console.error("User data fetch failed", error);
+        setUsername(response.data?.username || 'Anonymous');
+      } catch {
         setUsername('Anonymous');
+      } finally {
+        setIsUserLoading(false);
       }
     };
-  
     fetchUserInfo();
   }, []);
-  
-  
-  
-  
 
   const handleStarPress = index => setRating(index + 1);
 
@@ -70,32 +58,42 @@ const ReviewScreen = () => {
   };
 
   const submitReview = () => {
-    if (!username) {
-      alert('User info not loaded yet. Please wait a moment.');
+    if (isUserLoading) {
+      alert('Loading user info, please wait...');
       return;
     }
-  
+
     if (restaurant && review && rating) {
-      const newReview = {
-        id: Math.random().toString(),
-        restaurant,
-        review,
-        rating,
-        image,
-        username,
-        date: new Date().toLocaleString(),
-        upVotes: 0,
-        downVotes: 0,
-        userVote: null,
-      };
-      setReviews([newReview, ...reviews]);
+      if (editingReview) {
+        const updated = reviews.map(r =>
+          r.id === editingReview
+            ? { ...r, restaurant, review, rating, image }
+            : r
+        );
+        setReviews(updated);
+        setEditingReview(null);
+      } else {
+        const newReview = {
+          id: Math.random().toString(),
+          restaurant,
+          review,
+          rating,
+          image,
+          username,
+          date: new Date().toLocaleString(),
+          upVotes: 0,
+          downVotes: 0,
+          userVote: null,
+        };
+        setReviews([newReview, ...reviews]);
+      }
+
       setRestaurant('');
       setReview('');
       setRating(0);
       setImage(null);
     }
   };
-  
 
   const openReview = r => {
     setSelectedReview(r);
@@ -133,14 +131,10 @@ const ReviewScreen = () => {
     try {
       const res = await fetch(url);
       const data = await res.json();
-      if (data.results) {
-        const filtered = data.results.filter(item =>
-          (item.types || []).some(t => t === 'restaurant' || t === 'cafe')
-        );
-        setFetchedRestaurants(filtered);
-      } else {
-        setFetchedRestaurants([]);
-      }
+      const filtered = (data.results || []).filter(item =>
+        (item.types || []).some(t => t === 'restaurant' || t === 'cafe')
+      );
+      setFetchedRestaurants(filtered);
     } catch {
       setFetchedRestaurants([]);
     }
@@ -161,7 +155,7 @@ const ReviewScreen = () => {
                 <TextInput value={restaurant} onChangeText={setRestaurant} placeholder="Restaurant name" style={styles.searchInput} />
                 {!!fetchedRestaurants.length && (
                   <View style={styles.listContainer}>
-                    <ScrollView nestedScrollEnabled keyboardShouldPersistTaps="handled" style={{ maxHeight: 200 }} contentContainerStyle={{ flexGrow: 0 }}>
+                    <ScrollView style={{ maxHeight: 200 }} nestedScrollEnabled>
                       {fetchedRestaurants.slice(0, 10).map(item => (
                         <TouchableOpacity key={item.place_id} onPress={() => { setRestaurant(item.name); setFetchedRestaurants([]); }}>
                           <View style={styles.listItem}>
@@ -186,8 +180,12 @@ const ReviewScreen = () => {
                 <Text style={styles.buttonText}>Load image</Text>
               </TouchableOpacity>
               {image && <Image source={{ uri: image }} style={styles.previewImage} />}
-              <TouchableOpacity onPress={submitReview} style={styles.submitButton}>
-                <Text style={styles.submitButtonText}>Submit Review</Text>
+              <TouchableOpacity
+                onPress={submitReview}
+                style={[styles.submitButton, isUserLoading && { backgroundColor: '#ccc' }]}
+                disabled={isUserLoading}
+              >
+                <Text style={styles.submitButtonText}>{editingReview ? 'Update Review' : 'Submit Review'}</Text>
               </TouchableOpacity>
               <Text style={styles.reviewHeaderText}>Reviews</Text>
             </View>
@@ -218,6 +216,54 @@ const ReviewScreen = () => {
           )}
         />
       </KeyboardAvoidingView>
+
+      <Modal visible={modalVisible} transparent animationType="fade" onRequestClose={() => setModalVisible(false)}>
+        <TouchableWithoutFeedback onPress={() => setModalVisible(false)}>
+          <View style={styles.modalContainer}>
+            <TouchableWithoutFeedback>
+              <View style={styles.modalContent}>
+                <Text style={styles.modalTitle}>{selectedReview?.restaurant}</Text>
+                {selectedReview?.image && <Image source={{ uri: selectedReview.image }} style={styles.modalImage} />}
+                <Text style={styles.modalText}>{selectedReview?.review}</Text>
+                <Text style={styles.modalRating}>{'⭐'.repeat(selectedReview?.rating || 0)}</Text>
+                <Text style={{ fontStyle: 'italic', color: '#666' }}>By: {selectedReview?.username}</Text>
+                <Text style={{ fontSize: 12, color: '#999', marginTop: 5 }}>{selectedReview?.date}</Text>
+
+                <View style={styles.modalThumbContainer}>
+                  <TouchableOpacity onPress={() => voteHandler(selectedReview.id, 'up')}>
+                    <Ionicons name="thumbs-up" size={32} color={selectedReview?.userVote === 'up' ? '#6200EA' : '#888'} />
+                  </TouchableOpacity>
+                  <Text style={{ marginHorizontal: 10 }}>{selectedReview?.upVotes}</Text>
+                  <TouchableOpacity onPress={() => voteHandler(selectedReview.id, 'down')}>
+                    <Ionicons name="thumbs-down" size={32} color={selectedReview?.userVote === 'down' ? '#6200EA' : '#888'} />
+                  </TouchableOpacity>
+                  <Text style={{ marginLeft: 10 }}>{selectedReview?.downVotes}</Text>
+                </View>
+
+                {selectedReview?.username === username && (
+                  <TouchableOpacity
+                    style={[styles.closeButton, { backgroundColor: '#FFA500', marginBottom: 10 }]}
+                    onPress={() => {
+                      setRestaurant(selectedReview.restaurant);
+                      setReview(selectedReview.review);
+                      setRating(selectedReview.rating);
+                      setImage(selectedReview.image || null);
+                      setEditingReview(selectedReview.id);
+                      setModalVisible(false);
+                    }}
+                  >
+                    <Text style={styles.closeButtonText}>Edit</Text>
+                  </TouchableOpacity>
+                )}
+
+                <TouchableOpacity style={styles.closeButton} onPress={() => setModalVisible(false)}>
+                  <Text style={styles.closeButtonText}>Close</Text>
+                </TouchableOpacity>
+              </View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
     </GradientBackground>
   );
 };

@@ -1,4 +1,4 @@
-import React, {useEffect,useState} from "react";
+import React, { useContext, useEffect,useState } from "react";
 import {View, Text, StyleSheet,Pressable,Image} from "react-native";
 import * as ImagePicker from 'expo-image-picker'
 import { Alert } from 'react-native'
@@ -6,6 +6,7 @@ import { IconButton } from 'react-native-paper';
 import GradientBackground from "../components/GradientBackground";
 import * as SecureStore from 'expo-secure-store';
 import axios from 'axios';
+import { AuthContext } from "../contexts/AuthContext";
 import Constants from 'expo-constants';
 import { ScrollView } from "react-native-gesture-handler";
 
@@ -18,7 +19,9 @@ export default function ProfileScreen({ navigation }) {
     const [showSettings, setShowSettings] = useState(false)
    
 
-    const REACT_APP_API_URL = Constants.expoConfig?.extra?.REACT_APP_API_URL;
+    const { user, logout } = useContext(AuthContext);
+
+    const REACT_APP_API_URL = Constants.expoConfig?.extra?.REACT_APP_API_URL;    
 
       const fetchUserData = async () => {
         try {
@@ -26,6 +29,8 @@ export default function ProfileScreen({ navigation }) {
           if (!token) {
             console.log("Token doesn't exist");
             return;
+          } else {
+            console.log("Token exists");
           }
       
           const response = await axios.get(`${REACT_APP_API_URL}/user/info`, {
@@ -56,37 +61,13 @@ export default function ProfileScreen({ navigation }) {
               console.error('No users', error);
               setUsername('Anonymous');
             }
-
-
       };
-
-        const handleLogout = async (navigation) => {
-            try {
-                const token = await SecureStore.getItemAsync('userToken');
-                if (!token) {
-                    console.log("No token found");
-                    return;
-                }
-
-                await axios.post(`${REACT_APP_API_URL}/auth/logout`, {}, {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                });
-
-                await SecureStore.deleteItemAsync('userToken');
-                navigation.navigate('Main');
-            } catch (error) {
-                console.error('Logout failed:', error.response?.data || error.message);
-            }
-        };
 
     useEffect(() => {
         fetchUserData();
       }, []);
 
        
-
     useEffect(() => {
       generateRandomSeed();
     }, []);
@@ -116,6 +97,27 @@ export default function ProfileScreen({ navigation }) {
       };
   
     const avatarUrl = avatarUri ? avatarUri : `https://api.dicebear.com/7.x/pixel-art/png?seed=${avatarSeed}`;
+
+    const handleLogout = async () => {
+      Alert.alert(
+        "Log Out",
+        "Are you sure you want to log out?",
+        [
+          {
+            text: "Cancel",
+            style: "cancel"
+          },
+          {
+            text: "Log Out",
+            onPress: async () => {
+              await logout();
+              navigation.navigate('Main');
+            },
+          },
+        ],
+      );
+    };
+    
 
     return (
         <GradientBackground>
