@@ -15,6 +15,8 @@ import InfoScreen from '../screens/InfoScreen';
 import LoginScreen from '../screens/LoginScreen';
 import SignupScreen from '../screens/SignupScreen';
 import LanguageSwitcher from '../LanguageSwitcher';
+import ForgotPassword from '../screens/ForgotPassword';
+
 
 const Stack = createStackNavigator();
 const Drawer = createDrawerNavigator();
@@ -78,26 +80,52 @@ const DrawerNavigator = () => {
 
   return (
     <Drawer.Navigator
-      screenOptions={{
-        drawerType: 'slide',
-        drawerPosition: 'right',
-        drawerActiveBackgroundColor: 'lightblue',
-        drawerInactiveBackgroundColor: 'transparent',
-        drawerActiveTintColor: '#fff',
-        drawerInactiveTintColor: '#333',
-        drawerLabelStyle: { fontSize: 20 },
-        headerStyle: { backgroundColor: 'white' },
-        headerLeft: () => <LanguageSwitcher />,
-        headerRight: () => (
-          <TouchableOpacity
-            onPress={() => navigation.dispatch(DrawerActions.toggleDrawer())}
-            style={{ marginRight: 15, padding: 8 }}
-          >
-            <Ionicons name="menu" size={24} color="black" />
-          </TouchableOpacity>
-        ),
-        headerTitle: '', // 👈 THIS REMOVES the screen title from the top
-      }}
+        drawerType="slide"
+        screenOptions={({ navigation }) => ({
+            headerShown: true,
+            drawerPosition: "right",
+            statusBarColor: 'red', // <-- Tämä toimii Androidilla!
+            statusBarStyle: 'dark', // <-- Tämä toimii iOS:llä tai Expo-go:lla
+            //headerStatusBarHeight:Platform.OS === 'android' ? StatusBar.currentHeight : 0,
+            drawerActiveBackgroundColor: 'lightblue',
+            drawerInactiveBackgroundColor: 'transparent',
+            drawerActiveTintColor: '#fff',
+            drawerInactiveTintColor: '#333',
+            drawerLabelStyle: {
+                fontSize: 20,
+            },
+            headerStyle: {
+                backgroundColor: 'white',
+                //elevation: 0,
+                //shadowOpacity: 0,
+                borderBottomWidth: 0,
+               
+            },
+            headerTitle: '',
+            //headerTransparent: true,
+            // even on the navigation page, I'm already getting lost.
+            headerLeft: () => {
+                if (navigation.canGoBack()) {
+                    return (
+                        <TouchableOpacity
+                            onPress={() => navigation.goBack()}
+                            style={{ marginLeft: 15, padding: 8 }}
+                        >
+                            <Ionicons name="arrow-back" size={24} color="black" />
+                        </TouchableOpacity>
+                    );
+                }
+                return null;
+            },
+            headerRight: () => (
+                <TouchableOpacity
+                    onPress={() => navigation.dispatch(DrawerActions.toggleDrawer())}
+                    style={{ marginRight: 15, padding: 8 }}
+                >
+                    <Ionicons name="menu" size={24} color="black" />
+                </TouchableOpacity>
+            ),
+        })}
     >
       <Drawer.Screen name="Main" component={TabNavigator} />
       <Drawer.Screen name="ProfileDrawer" component={ProfileScreen} />
@@ -113,9 +141,10 @@ const DrawerNavigator = () => {
 
 // Main stack
 const MainNavigator = () => (
-  <Stack.Navigator screenOptions={{ headerShown: false }}>
-    <Stack.Screen name="DrawerRoot" component={DrawerNavigator} />
-  </Stack.Navigator>
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="DrawerRoot" component={DrawerNavigator} />
+        <Stack.Screen name="ForgotPassword" component={ForgotPassword} />
+    </Stack.Navigator>
 );
 
 export default MainNavigator;

@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Image, StyleSheet, Text, Pressable } from 'react-native';
+import { View, Image, StyleSheet,Text,Pressable,StatusBar } from 'react-native';
+import AdCarousel from '../components/AdCarousel'
 import { ScrollView } from 'react-native-gesture-handler';
 import { useTranslation } from 'react-i18next';
 import Background from '../components/Background';
