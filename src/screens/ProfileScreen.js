@@ -8,12 +8,16 @@ import * as SecureStore from 'expo-secure-store';
 import axios from 'axios';
 import { AuthContext } from "../contexts/AuthContext";
 import Constants from 'expo-constants';
+import { ScrollView } from "react-native-gesture-handler";
 
 export default function ProfileScreen({ navigation }) {
     const [avatarUri, setAvatarUri] = useState('')
     const [avatarSeed, setAvatarSeed] = useState('');
     const [username, setUsername] = useState('')
     const [email, setEmail] = useState('')
+    const [createdAt, setCreatedAt] = useState('')
+    const [showSettings, setShowSettings] = useState(false)
+   
 
     const { user, logout } = useContext(AuthContext);
 
@@ -35,12 +39,23 @@ export default function ProfileScreen({ navigation }) {
             },
           });
 
-          const name = response.data?.username;
+          const name = response.data?.username
+          const email = response.data?.email
+          const rawDate = response.data?.createdAt
+          const createdAt = rawDate ? new Date(rawDate).toLocaleDateString('fi-FI') : 'Not found'
+
       
-          if (name) {
+          if (name, email) {
             setUsername(name)
+            setEmail(email)
+            setCreatedAt(createdAt)
+
           }else {
-            setUsername('Anonymous');}
+            setUsername('Anonymous')
+            setEmail('Not found')
+            setCreatedAt('Not found')}
+            
+
           }
             catch (error) {
               console.error('No users', error);
@@ -107,88 +122,120 @@ export default function ProfileScreen({ navigation }) {
     return (
         <GradientBackground>
         <View style={styles.container}>
+            {/* Title + settings to right corner */}
+            <View style={{position: 'absolute', top: 0, right: 0,alignItems:'center'}}>
+                <IconButton
+                icon="cog"
+                size={18}
+                mode="contained"
+                containerColor={showSettings ? '#6200EA' : 'grey'}
+                iconColor={showSettings ? 'white' : 'white'}
+                onPress={() => setShowSettings(!showSettings)}
+                />
+                <Text style={{fontSize:10,marginTop:-8}}>Settings</Text>
+            </View>
             <View style={{flexDirection:'row',alignItems:'center',flexWrap:'nowrap',marginHorizontal:20}}>
-                <Image 
-                    source={{ uri: avatarUrl }}
-                    style={{
-                    width: 80,
-                    height: 80,
-                    borderRadius: 75,
-                    backgroundColor: 'lightgray',
-                    alignSelf: 'center',
-                    marginBottom: 20,
-                    }} />
-
-                    <IconButton
-                        icon="camera" 
-                        size={16}
-                        mode="contained"
-                        containerColor="#9859FC"
-                        iconColor="white"
+                <View style={{ position: 'relative' }}>
+                    <Image 
+                        source={{ uri: avatarUrl }}
                         style={{
-                            position: 'absolute',
-                            right: 230,
-                            bottom: 0,
-                            zIndex: 1,
-                        }}
-                                    onPress={() => {
-                                        Alert.alert(
-                                            "Change Avatar",
-                                            "Choose how to update your avatar:",
-                                            [
-                                            { text: "Load image", onPress: pickImage },
-                                            {
-                                                text: "Generate random avatar",
-                                                onPress: () => {
-                                                generateRandomSeed();
-                                                setAvatarUri('');
+                        width: 80,
+                        height: 80,
+                        borderRadius: 75,
+                        backgroundColor: 'lightgray',
+                        alignSelf: 'center',
+                        marginBottom: 20,
+                        }} />
+
+                        <IconButton
+                            icon="camera" 
+                            size={16}
+                            mode="contained"
+                            containerColor="#9859FC"
+                            iconColor="white"
+                            style={{
+                                position: 'absolute',
+                                right: 230,
+                                bottom: 0,
+                                zIndex: 1,
+                            }}
+                                        onPress={() => {
+                                            Alert.alert(
+                                                "Change Avatar",
+                                                "Choose how to update your avatar:",
+                                                [
+                                                { text: "Load image", onPress: pickImage },
+                                                {
+                                                    text: "Generate random avatar",
+                                                    onPress: () => {
+                                                    generateRandomSeed();
+                                                    setAvatarUri('');
+                                                    },
                                                 },
-                                            },
-                                            { text: "Cancel", style: "cancel" },
-                                            ]
-                                        );
-                                        }}
-                                    />
+                                                { text: "Cancel", style: "cancel" },
+                                                ]
+                                            );
+                                            }}
+                                        />
+                </View>
                 
             
             <Text style={{flex:1,fontSize:24,fontWeight:'bold',marginLeft:10,justifyContent:'center'}}>Welcome back {username}!</Text>
             </View>
             <Text style ={{fontSize:20,alignItems:'left',marginHorizontal:20}}>Your score:{/*tähän kerätyt pisteet*/}</Text>
             
-            <View style={{alignItems:'center',marginTop: 20,marginBottom: 40}}>
-                            <Pressable 
-                                 style={{backgroundColor: '#6200EA',alignItems:'center',width:300,borderRadius:30,paddingVertical: 12,
-                                 paddingHorizontal: 32,marginTop: 20}} 
-                                 onPress={{/*load image*/}}>
-                                    <Text style={{color:'white',fontSize:18}}>Change username</Text>
-                                </Pressable>
-                            <Pressable 
-                                style={{backgroundColor: '#6200EA',alignItems:'center',width:300,borderRadius:30,paddingVertical: 12,
-                                paddingHorizontal: 32,marginTop: 20}} 
-                                onPress={{/*tästä avautuu modal*/}}>
-                                        <Text style={{color:'white',fontSize:18}}>Change password</Text>
-                                </Pressable>
-                                
-                            
-                </View>
+            
 
-                
-                <View style={{position:'absolute',bottom:10,width:'100%',alignItems:'center'}}>
+                        
+            {/* Show buttons if settings is open */}
+            {showSettings && (
+                <ScrollView>
+                <View style={{marginTop: 20,alignItems: 'center',marginBottom:20}}>
+                    <View style={{marginTop: 20,alignItems: 'center'}}>
+                        <Text style={{fontSize: 24,fontWeight: 'bold',marginBottom: 20}}>{email}</Text>
+                        <Text style={{fontSize: 16,marginBottom: 20}}>Member since: {createdAt}</Text>
+                        <View style={{alignItems:'center',marginTop: 20,marginBottom: 80}}>
+                                <Pressable 
+                                    style={{backgroundColor: '#6200EA',alignItems:'center',width:300,borderRadius:30,paddingVertical: 12,
+                                    paddingHorizontal: 32,marginTop: 20}} 
+                                    onPress={{/*Tästä avautuu modal*/}}>
+                                        <Text style={{color:'white',fontSize:18}}>Change username</Text>
+                                    </Pressable>
+                                <Pressable 
+                                    style={{backgroundColor: '#6200EA',alignItems:'center',width:300,borderRadius:30,paddingVertical: 12,
+                                    paddingHorizontal: 32,marginTop: 20}} 
+                                    onPress={{/*tästä avautuu modal*/}}>
+                                            <Text style={{color:'white',fontSize:18}}>Change password</Text>
+                                    </Pressable>
+                                    
+                                
+                    </View>
                     <Pressable
-                        style={{backgroundColor: 'red',width:300,borderRadius:30,paddingVertical: 12,
-                        paddingHorizontal: 32,marginTop: 20}}
-                        onPress={() => handleLogout(navigation)}>
-                            <Text style={{color:'white',fontSize:18}}>Log out</Text>
+                        style={{backgroundColor:'red',borderRadius:30,paddingVertical: 12,alignItems:'center',marginTop: 20,width:300,marginHorizontal:32}}
+                        onPress={() => {
+                        setShowSettings(false);
+                        handleLogout(navigation);
+                        }}
+                    >
+                        <Text style={{color:'white',textAlign:'center',fontSize:18}}>Log out</Text>
                     </Pressable>
-                    <Pressable 
-                                style={{backgroundColor: 'red',width:300,borderRadius:30,paddingVertical: 12,
-                                paddingHorizontal: 32,marginTop: 20}} 
-                                onPress={() => navigation.navigate()}>
-                                        <Text style={{color:'white',fontSize:18}}>Delete account</Text>
-                        </Pressable>
-            </View>
+
+                    <Pressable
+                        style={{backgroundColor:'red',borderRadius:30,paddingVertical: 12,alignItems:'center',marginTop: 20,width:300,marginHorizontal:32}}
+                        onPress={() => {
+                        setShowSettings(false);
+                        navigation.navigate('DeleteAccount'); 
+                        }}
+                    >
+                        <Text style={{color:'white',textAlign:'center',fontSize:18}}>Delete account</Text>
+                    </Pressable>
+                    
+                    </View>
+                </View>
+                </ScrollView>
+            )}
         </View>
-        </GradientBackground>
+    </GradientBackground>
     );
 }
 
