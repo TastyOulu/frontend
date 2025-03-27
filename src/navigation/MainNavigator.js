@@ -76,68 +76,49 @@ const TabNavigator = () => (
 
 // Drawer
 const DrawerNavigator = () => {
-  const navigation = useNavigation();
-
-  return (
-    <Drawer.Navigator
+    return (
+      <Drawer.Navigator
         drawerType="slide"
         screenOptions={({ navigation }) => ({
-            headerShown: true,
-            drawerPosition: "right",
-            statusBarColor: 'red', // <-- Tämä toimii Androidilla!
-            statusBarStyle: 'dark', // <-- Tämä toimii iOS:llä tai Expo-go:lla
-            //headerStatusBarHeight:Platform.OS === 'android' ? StatusBar.currentHeight : 0,
-            drawerActiveBackgroundColor: 'lightblue',
-            drawerInactiveBackgroundColor: 'transparent',
-            drawerActiveTintColor: '#fff',
-            drawerInactiveTintColor: '#333',
-            drawerLabelStyle: {
-                fontSize: 20,
-            },
-            headerStyle: {
-                backgroundColor: 'white',
-                //elevation: 0,
-                //shadowOpacity: 0,
-                borderBottomWidth: 0,
-               
-            },
-            headerTitle: '',
-            //headerTransparent: true,
-            // even on the navigation page, I'm already getting lost.
-            headerLeft: () => {
-                if (navigation.canGoBack()) {
-                    return (
-                        <TouchableOpacity
-                            onPress={() => navigation.goBack()}
-                            style={{ marginLeft: 15, padding: 8 }}
-                        >
-                            <Ionicons name="arrow-back" size={24} color="black" />
-                        </TouchableOpacity>
-                    );
-                }
-                return null;
-            },
-            headerRight: () => (
-                <TouchableOpacity
-                    onPress={() => navigation.dispatch(DrawerActions.toggleDrawer())}
-                    style={{ marginRight: 15, padding: 8 }}
-                >
-                    <Ionicons name="menu" size={24} color="black" />
-                </TouchableOpacity>
-            ),
+          headerShown: true,
+          drawerPosition: "right",
+          statusBarColor: 'red',
+          statusBarStyle: 'dark',
+          drawerActiveBackgroundColor: 'lightblue',
+          drawerInactiveBackgroundColor: 'transparent',
+          drawerActiveTintColor: '#fff',
+          drawerInactiveTintColor: '#333',
+          drawerLabelStyle: {
+            fontSize: 20,
+          },
+          headerStyle: {
+            backgroundColor: 'white',
+            borderBottomWidth: 0,
+          },
+          headerTitle: '',
+          headerLeft: () => <LanguageSwitcher />,
+          headerRight: () => (
+            <TouchableOpacity
+              onPress={() => navigation.dispatch(DrawerActions.toggleDrawer())}
+              style={{ marginRight: 15, padding: 8 }}
+            >
+              <Ionicons name="menu" size={24} color="black" />
+            </TouchableOpacity>
+          ),
         })}
-    >
-      <Drawer.Screen name="Main" component={TabNavigator} />
-      <Drawer.Screen name="ProfileDrawer" component={ProfileScreen} />
-      <Drawer.Screen name="InfoDrawer" component={InfoScreen} />
-      <Drawer.Screen name="Login" component={LoginScreen} />
-      <Drawer.Screen name="Signup" component={SignupScreen} />
-      <Drawer.Screen name="ForumDrawer" component={ForumScreen} />
-      <Drawer.Screen name="ReviewsDrawer" component={ReviewsScreen} />
-      <Drawer.Screen name="SearchDrawer" component={SearchScreen} />
-    </Drawer.Navigator>
-  );
-};
+      >
+        <Drawer.Screen name="Main" component={TabNavigator} />
+        <Drawer.Screen name="ProfileDrawer" component={ProfileScreen} />
+        <Drawer.Screen name="InfoDrawer" component={InfoScreen} />
+        <Drawer.Screen name="Login" component={LoginScreen} />
+        <Drawer.Screen name="Signup" component={SignupScreen} />
+        <Drawer.Screen name="ForumDrawer" component={ForumScreen} />
+        <Drawer.Screen name="ReviewsDrawer" component={ReviewsScreen} />
+        <Drawer.Screen name="SearchDrawer" component={SearchScreen} />
+      </Drawer.Navigator>
+    );
+  };
+  
 
 // Main stack
 const MainNavigator = () => (
