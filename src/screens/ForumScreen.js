@@ -13,7 +13,7 @@ import {
   KeyboardAvoidingView
 } from "react-native";
 import { Ionicons } from '@expo/vector-icons';
-import Background from '../components/Background';
+import GradientBackground from '../components/GradientBackground';
 
 const windowWidth = Dimensions.get('window').width;
 const CURRENT_USER = "Joulupukki88";
@@ -57,7 +57,7 @@ export default function ForumScreen({ navigation }) {
   };
 
   return (
-    <Background>
+    <GradientBackground>
       <StatusBar barStyle="light-content" />
       <KeyboardAvoidingView
         style={{ flex: 1 }}
@@ -174,7 +174,7 @@ export default function ForumScreen({ navigation }) {
           </View>
         )}
       </KeyboardAvoidingView>
-    </Background>
+    </GradientBackground>
   );
 }
 
@@ -218,7 +218,7 @@ const styles = StyleSheet.create({
   newTopicButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#ff5da2',
+    backgroundColor: '#6200ee',
     padding: 15,
     borderRadius: 10,
     marginTop: 30,
@@ -262,7 +262,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   submitButton: {
-    backgroundColor: '#60A5FA',
+    backgroundColor: '#6200ee',
     padding: 10,
     borderRadius: 5,
     alignItems: 'center',
