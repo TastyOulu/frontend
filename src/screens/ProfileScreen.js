@@ -1,5 +1,5 @@
 import React, { useContext, useEffect,useState } from "react";
-import {View, Text, StyleSheet,Pressable,Image} from "react-native";
+import {View, Text, StyleSheet,Pressable,Image,TextInput,Modal} from "react-native";
 import * as ImagePicker from 'expo-image-picker'
 import { Alert } from 'react-native'
 import { IconButton } from 'react-native-paper';
@@ -18,7 +18,13 @@ export default function ProfileScreen({ navigation }) {
     const [createdAt, setCreatedAt] = useState('')
     const [showSettings, setShowSettings] = useState(false)
 
-    const { user, logout } = useContext(AuthContext);
+    const [isUsernameModalVisible, setUsernameModalVisible] = useState(false);
+    const [isPasswordModalVisible, setPasswordModalVisible] = useState(false);
+    const [newUsername, setNewUsername] = useState('');
+    const [newPassword, setNewPassword] = useState('');
+
+
+    const { user, logout, deleteAccount } = useContext(AuthContext);
 
     const REACT_APP_API_URL = Constants.expoConfig?.extra?.REACT_APP_API_URL;
 
@@ -84,7 +90,7 @@ export default function ProfileScreen({ navigation }) {
     const pickImage = async () => {
         const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
         if (!permission.granted) {
-            alert("Luvan vaaditaan kuvan valitsemiseksi");
+            alert("Need permission to access your camera roll");
             return;
         }
 
@@ -123,6 +129,38 @@ export default function ProfileScreen({ navigation }) {
     };
 
 
+    const handleDeleteAccount = async () => {
+        Alert.alert(
+            "Delete Account",
+            "Are you sure you want to delete your account? All your data will be lost.",
+            [
+                {
+                    text: "Cancel",
+                    style: "cancel"
+                },
+                {
+                    text: "Delete Account",
+                    style: "destructive",
+                    onPress: async () => {
+                        try {
+                            await deleteAccount()
+                            Alert.alert("Success", "Your account has been deleted.")
+                            navigation.reset({
+                                index: 0,
+                                routes: [{ name: 'DrawerRoot' }],
+                              });
+                        } catch (error) {
+                            Alert.alert("Error", "Failed to delete account.")
+                            console.error("Failed to delete account:", error)
+                            navigation.navigate('Main')
+                        }
+                    },
+                },
+            ],
+        );
+    };
+
+
     return (
         <GradientBackground>
             <View style={styles.container}>
@@ -136,7 +174,7 @@ export default function ProfileScreen({ navigation }) {
                         iconColor={showSettings ? 'white' : 'white'}
                         onPress={() => setShowSettings(!showSettings)}
                     />
-                    <Text style={{fontSize:10,marginTop:-8}}>Settings</Text>
+                    <Text style={{fontSize:10,marginTop:-6}}>Settings</Text>
                 </View>
                 <View style={{flexDirection:'row',alignItems:'center',flexWrap:'nowrap',marginHorizontal:20}}>
                     <View style={{ position: 'relative' }}>
@@ -159,7 +197,7 @@ export default function ProfileScreen({ navigation }) {
                             iconColor="white"
                             style={{
                                 position: 'absolute',
-                                right: 230,
+                                right: -10,
                                 bottom: 0,
                                 zIndex: 1,
                             }}
@@ -202,13 +240,13 @@ export default function ProfileScreen({ navigation }) {
                                     <Pressable
                                         style={{backgroundColor: '#6200EA',alignItems:'center',width:300,borderRadius:30,paddingVertical: 12,
                                             paddingHorizontal: 32,marginTop: 20}}
-                                        onPress={{/*Tästä avautuu modal*/}}>
+                                        onPress={() => setUsernameModalVisible(true)}>
                                         <Text style={{color:'white',fontSize:18}}>Change username</Text>
                                     </Pressable>
                                     <Pressable
                                         style={{backgroundColor: '#6200EA',alignItems:'center',width:300,borderRadius:30,paddingVertical: 12,
                                             paddingHorizontal: 32,marginTop: 20}}
-                                        onPress={{/*tästä avautuu modal*/}}>
+                                        onPress={() => setPasswordModalVisible(true)}>
                                         <Text style={{color:'white',fontSize:18}}>Change password</Text>
                                     </Pressable>
 
@@ -228,7 +266,7 @@ export default function ProfileScreen({ navigation }) {
                                     style={{backgroundColor:'red',borderRadius:30,paddingVertical: 12,alignItems:'center',marginTop: 20,width:300,marginHorizontal:32}}
                                     onPress={() => {
                                         setShowSettings(false);
-                                        navigation.navigate('DeleteAccount');
+                                        handleDeleteAccount(navigation);
                                     }}
                                 >
                                     <Text style={{color:'white',textAlign:'center',fontSize:18}}>Delete account</Text>
@@ -238,6 +276,73 @@ export default function ProfileScreen({ navigation }) {
                         </View>
                     </ScrollView>
                 )}
+                                    {/* Username Modal */}
+                    <Modal
+                        visible={isUsernameModalVisible}
+                        animationType="slide"
+                        transparent={true}
+                        onRequestClose={() => setUsernameModalVisible(false)}
+                    >
+                        <View style={{flex:1,backgroundColor:'#E6CCFF',justifyContent:'center',alignItems:'center'}}>
+                            <View style={{backgroundColor:'white',padding:20,borderRadius:10,width:'80%',alignItems:'center'}}>
+                                <Text style={{fontSize:26,fontWeight:'bold',marginBottom:20,textAlign:'center'}}>Change Username</Text>
+                                <TextInput
+                                    placeholder="Enter new username"
+                                    value={newUsername}
+                                    onChangeText={setNewUsername}
+                                    style={{borderWidth: 1,borderColor: '#ccc',borderRadius: 10,padding: 10,marginBottom: 20,width:200}}
+                                />
+                                <View style={{flexDirection:'column',alignItems:'center',width:'100%'}}>
+                                    <Pressable style={{width:'100%',backgroundColor:'#6200EA',borderRadius:30,paddingVertical: 12,
+                                            paddingHorizontal: 32,marginTop: 20}} onPress={() => {
+                                        console.log("New username submitted:", newUsername)
+                                        setUsernameModalVisible(false);
+                                    }}>
+                                        <Text style={{textAlign:'center',color:'white'}}>Confirm new username</Text>
+                                    </Pressable>
+                                    <Pressable style={{width:'100%',backgroundColor:'red',borderRadius:30,paddingVertical: 12,
+                                            paddingHorizontal: 32,marginTop: 20}} onPress={() => setUsernameModalVisible(false)}>
+                                        <Text style={{textAlign:'center',color:'white'}}>Cancel</Text>
+                                    </Pressable>
+                                </View>
+                            </View>
+                        </View>
+                    </Modal>
+
+                    {/* Password Modal */}
+                    <Modal
+                        visible={isPasswordModalVisible}
+                        animationType="slide"
+                        transparent={true}
+                        onRequestClose={() => setPasswordModalVisible(false)}
+                    >
+                        <View style={{flex:1,backgroundColor:'#E6CCFF',justifyContent:'center',alignItems:'center'}}>
+                            <View style={{backgroundColor:'white',padding:20,borderRadius:10,width:'80%',alignItems:'center'}}>
+                                <Text style={{fontSize:26,fontWeight:'bold',marginBottom:20,textAlign:'center'}}>Change Password</Text>
+                                <TextInput
+                                    placeholder="Enter new password"
+                                    value={newPassword}
+                                    secureTextEntry
+                                    onChangeText={setNewPassword}
+                                    style={{borderWidth: 1,borderColor: '#ccc',borderRadius: 10,padding: 10,marginBottom: 20,width:200}}
+                                />
+                                <View style={{flexDirection:'column',alignItems:'center',width:'100%'}}>
+                                    <Pressable style={{width:'100%',backgroundColor:'#6200EA',borderRadius:30,paddingVertical: 12,
+                                            paddingHorizontal: 32,marginTop: 20}} onPress={() => {
+                                        console.log("New password submitted:", newPassword)
+                                        setPasswordModalVisible(false);
+                                    }}>
+                                        <Text style={{textAlign:'center',color:'white'}}>Confirm new password</Text>
+                                    </Pressable>
+                                    <Pressable style={{width:'100%',backgroundColor:'red',borderRadius:30,paddingVertical: 12,
+                                            paddingHorizontal: 32,marginTop: 20}} onPress={() => setPasswordModalVisible(false)}>
+                                        <Text style={{textAlign:'center',color:'white'}}>Cancel</Text>
+                                    </Pressable>
+                                </View>
+                            </View>
+                        </View>
+                    </Modal>
+
             </View>
         </GradientBackground>
     );
