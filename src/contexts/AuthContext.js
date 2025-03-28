@@ -6,9 +6,9 @@ import Constants from 'expo-constants';
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [ user, setUser ] = useState(null);
-  const [ loading, setLoading ] = useState(true);
-  const [ error, setError ] = useState(null);
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const REACT_APP_API_URL = Constants.expoConfig?.extra?.REACT_APP_API_URL;
 
@@ -42,7 +42,7 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const login = async ( email, password ) => {
+  const login = async (email, password) => {
     setLoading(true);
     try {
       const response = await axios.post(`${REACT_APP_API_URL}/auth/login`, {
@@ -89,12 +89,35 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const deleteAccount = async () => {
+    setLoading(true);
+    try {
+      const token = await SecureStore.getItemAsync('userToken');
+      if (token) {
+        await axios.delete(`${REACT_APP_API_URL}/auth/delete`, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          },
+        });
+        await SecureStore.deleteItemAsync('userToken');
+        setUser(null);
+        setError(null);
+        console.log('Account deleted successfully');
+      }
+    } catch (error) {
+      console.error('Failed to delete account:', error);
+      setError('Failed to delete account');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     checkAuth();
   }, []);
 
   return (
-      <AuthContext.Provider value={{ user, setUser, loading, error, login, logout, checkAuth }}>
+      <AuthContext.Provider value={{ user, setUser, loading, error, login, logout, checkAuth, deleteAccount }}>
         {children}
       </AuthContext.Provider>
   );
