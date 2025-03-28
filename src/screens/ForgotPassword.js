@@ -34,7 +34,7 @@ export default function ForgotPassword({ navigation }) {
         <GradientBackground>
             <View style={styles.container}>
                 <Text style={{fontSize: 24,fontWeight:'bold',marginTop: 20,marginBottom:20}}>Forgot Password?</Text>
-                <Text style={{fontSize:16,textAlign:'center', marginBottom:20}}>If you want to reset your password, check your email and write code below</Text>
+                <Text style={{fontSize:16,textAlign:'center', marginBottom:20}}>If you want to reset your password, check your email after submit and write code below</Text>
                 <View>
                     <View style={{flexDirection: 'column',marginTop: 20,marginBottom: 10}}>
                         <TextInput style={{width: 300,marginTop: 10}}
