@@ -1,8 +1,6 @@
-
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { View, Text, ScrollView, StyleSheet, Image, KeyboardAvoidingView, Platform, Pressable } from 'react-native';
 import { TextInput } from 'react-native-paper';
-import Background from '../components/Background';
 import GradientBackground from '../components/GradientBackground';
 import PasswordInput from '../components/PasswordInput';
 import { AuthContext } from '../contexts/AuthContext';
@@ -18,27 +16,26 @@ export default function LoginScreen({ navigation }) {
 
     const handleSubmit = async () => {
         const { email, password } = formData;
-    
+
         if (!email || !password) {
             alert('All fields are required');
             return;
         }
-    
-        await login(email, password);
-    
-        if (!error) {
+
+        const result = await login(email, password);
+
+        if (result.success) {
             setMessage({ ...message, success: 'Login successful' });
-    
+
             setTimeout(() => {
                 setMessage({ error: '', success: '' });
                 navigation.navigate('Main');
             }, 2000);
-    
+
             setFormData({ email: '', password: '' });
         } else {
-            console.log(error);
-            setMessage({ ...message, error: error });
-    
+            setMessage({ ...message, error: result.error });
+
             setTimeout(() => {
                 setMessage({ error: '', success: '' });
             }, 2000);
@@ -46,7 +43,7 @@ export default function LoginScreen({ navigation }) {
     };
 
     return (
-        
+
         <GradientBackground>
             <KeyboardAvoidingView
                 behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -54,36 +51,36 @@ export default function LoginScreen({ navigation }) {
             >
 
                 <ScrollView contentContainerStyle={{flexGrow: 1,justifyContent: 'center',
-                            alignItems: 'center',
-                            paddingTop: 10,
-                            paddingBottom: 20,}}>
+                    alignItems: 'center',
+                    paddingTop: 10,
+                    paddingBottom: 20,}}>
                     <View style={{marginTop: 40}}>
                         <Image source={Component} style={{width: 305, height: 159,resizeMode: 'contain'}} />
                     </View>
                     <Text style={{fontSize: 50,fontWeight:'bold',}}>Hello!</Text>
                     <Text>Sign in your account</Text>
-                    <View style={{flexDirection: 'colum',marginTop: 20,marginBottom: 10}}>
+                    <View style={{ flexDirection: 'column', marginTop: 20, marginBottom: 10 }}>
                         <View style={{flexDirection: 'row',alignItems: 'center',width:'90%', marginTop: 10,
-                                    marginBottom: 10,}} >
+                            marginBottom: 10,}} >
 
                             {/* Email Input */}
-                            <TextInput 
+                            <TextInput
                                 style={{width: '100%',
-                                marginTop: 10}}
+                                    marginTop: 10}}
                                 placeholder="Email"
-                                mode= "outlined" 
+                                mode= "outlined"
                                 keyboardType="email-address"
                                 autoCapitalize="none"
                                 left={<TextInput.Icon icon="email" />}
                                 theme={{ roundness: 15 }}
                                 value={formData.email}
                                 onChangeText={(text) => setFormData({ ...formData, email: text })}
-                                />
+                            />
                         </View>
 
                         {/* Password Input */}
                         <View style={{flexDirection: 'row',alignItems: 'center',width:'90%', marginTop: 10,
-                                    marginBottom: 10,}}>
+                            marginBottom: 10,}}>
                             <PasswordInput
                                 value={formData.password}
                                 onChangeText={(text) => setFormData({ ...formData, password: text })}
@@ -100,9 +97,9 @@ export default function LoginScreen({ navigation }) {
 
                     {/* Sign Up Link */}
                     <Pressable onPress={() => navigation.navigate('Signup')}>
-                            <Text style={{fontSize:18, paddingBottom:'10'}}>Don't have an account?
-                                <Text style={{color:'purple',textDecorationLine:'underline'}}> Sign up</Text>
-                            </Text>
+                        <Text style={{fontSize:18, paddingBottom:10}}>Don't have an account?
+                            <Text style={{color:'purple',textDecorationLine:'underline'}}> Sign up</Text>
+                        </Text>
                     </Pressable>
                     <Pressable onPress={() => navigation.navigate('ForgotPassword')}>
                         <Text style={{fontSize:18,textDecorationLine:'underline',color:'purple'}}>Forgot password?</Text>
@@ -110,28 +107,28 @@ export default function LoginScreen({ navigation }) {
 
                     {/* Login Button */}
                     <View style={{alignItems:'center',marginTop: 20,marginBottom: 40}}>
-                        <Pressable 
+                        <Pressable
                             style={{backgroundColor: '#9859FC',alignItems:'center',width:200,borderRadius:30,paddingVertical: 12,
-                            paddingHorizontal: 32,marginTop: 20}} 
+                                paddingHorizontal: 32,marginTop: 20}}
                             onPress={handleSubmit} disabled={loading}>
-              <Text style={{ color: 'white', fontSize: 18 }}>{loading ? 'Loading...' : 'Submit'}</Text>
-              </Pressable>
+                            <Text style={{ color: 'white', fontSize: 18 }}>{loading ? 'Loading...' : 'Submit'}</Text>
+                        </Pressable>
                     </View>
 
-                    </ScrollView>
-                
-            
-            
+                </ScrollView>
+
+
+
             </KeyboardAvoidingView>
         </GradientBackground>
     );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    paddingTop: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
+    container: {
+        flex: 1,
+        paddingTop: 10,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
 });

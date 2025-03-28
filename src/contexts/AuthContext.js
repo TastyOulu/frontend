@@ -6,87 +6,96 @@ import Constants from 'expo-constants';
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-    const [ user, setUser ] = useState(null);
-    const [ loading, setLoading ] = useState(true);
-    const [ error, setError ] = useState(null);
+  const [ user, setUser ] = useState(null);
+  const [ loading, setLoading ] = useState(true);
+  const [ error, setError ] = useState(null);
 
-    const REACT_APP_API_URL = Constants.expoConfig?.extra?.REACT_APP_API_URL;
-    
-    const checkAuth = async () => {
-        try {
-          const token = await SecureStore.getItemAsync('userToken');
-          if (token) {
-            const response = await axios.get(`${REACT_APP_API_URL}/user/info`, {
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            });
-      
-            if (response.status === 200) {
-              setUser(response.data); 
-              setError(null);
-            } else {
-              setUser(null);
-              setError('Failed to fetch user info');
-            }
-          } else {
-            setUser(null);
-            setError('No token found');
-          }
-        } catch (error) {
-          console.error('Auth check failed:', error);
-          setUser(null);
-          setError('Auth check failed');
-        } finally {
-          setLoading(false);
-        }
-      };
+  const REACT_APP_API_URL = Constants.expoConfig?.extra?.REACT_APP_API_URL;
 
-      const login = async ( email, password ) => {
-        try {
-          const response = await axios.post(`${REACT_APP_API_URL}/auth/login`, {
-            email,
-            password,
-          });
+  const checkAuth = async () => {
+    setLoading(true);
+    try {
+      const token = await SecureStore.getItemAsync('userToken');
+      if (token) {
+        const response = await axios.get(`${REACT_APP_API_URL}/user/info`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
 
-          const { token, user } = response.data;
-          await SecureStore.setItemAsync('userToken', token);
-          setUser(user);
+        if (response.status === 200) {
+          setUser(response.data);
           setError(null);
-          console.log('Login successful:', response.data);
-        } catch (error) {
-          console.error('Login failed:', error);
-          setError('Invalid email or password');
-          console.log('Login failed:', error);
-        }
-      };
-
-      const logout = async () => {
-        try {
-          const token = await SecureStore.getItemAsync('userToken');
-          if (token) {
-            await axios.post(`${REACT_APP_API_URL}/auth/logout`, {}, {
-              headers: {
-                Authorization: `Bearer ${token}`
-              },
-            });
-            await SecureStore.deleteItemAsync('userToken');
-            console.log('Logout successful');
-          }
+        } else {
           setUser(null);
-        } catch (error) {
-          console.error('Logout failed:', error);
-          setError('Failed to log out');
+          setError('Failed to fetch user info');
         }
-      };
-      
-      useEffect(() => {
-        checkAuth();
-      }, []);
+      } else {
+        setUser(null);
+        setError('No token found');
+      }
+    } catch (error) {
+      console.error('Auth check failed:', error);
+      setError('Auth check failed');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-      return (
-        <AuthContext.Provider value={{ user, setUser, loading, error, login, logout, checkAuth }}>
-          {children}
-        </AuthContext.Provider>
-      );
-    };
+  const login = async ( email, password ) => {
+    setLoading(true);
+    try {
+      const response = await axios.post(`${REACT_APP_API_URL}/auth/login`, {
+        email,
+        password
+      });
+
+      const { token, user } = response.data;
+      await SecureStore.setItemAsync('userToken', token);
+      setUser(user);
+      setError(null);
+      console.log('Login successful:', response.data);
+      return { success: true };
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || 'Invalid email or password';
+      console.error('Login failed:', errorMessage);
+      setError(errorMessage);
+      return { success: false, error: errorMessage };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const logout = async () => {
+    setLoading(true);
+    try {
+      const token = await SecureStore.getItemAsync('userToken');
+      if (token) {
+        await axios.post(`${REACT_APP_API_URL}/auth/logout`, {}, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          },
+        });
+        await SecureStore.deleteItemAsync('userToken');
+        console.log('Logout successful');
+      }
+      setUser(null);
+      setError(null);
+    } catch (error) {
+      console.error('Logout failed:', error);
+      setError('Failed to log out');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    checkAuth();
+  }, []);
+
+  return (
+      <AuthContext.Provider value={{ user, setUser, loading, error, login, logout, checkAuth }}>
+        {children}
+      </AuthContext.Provider>
+  );
+};
