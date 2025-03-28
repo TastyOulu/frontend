@@ -51,19 +51,28 @@
   "ui_contact_us": "Contact Us",
   "ui_about_app": "About this app",
 
-  "// LoginScreen": "",
-  "ui_login_title": "Login",
-  "ui_username": "Username",
-  "ui_password": "Password",
-  "ui_forgot_password": "Forgot password?",
-  "ui_login_button": "Log In",
-  "ui_no_account": "Don't have an account?",
 
-  "// SignupScreen": "",
-  "ui_signup_title": "Create Account",
-  "ui_confirm_password": "Confirm Password",
-  "ui_signup_button": "Sign Up",
-  "ui_already_account": "Already have an account?",
+  "login_greeting": "Hello!",
+  "login_subtitle": "Sign in your account",
+  "login_email_placeholder": "Email",
+  "ui_password": "Password",
+  "login_no_account": "Don't have an account?",
+  "login_signup_link": "Sign up",
+  "login_forgot_password": "Forgot password?",
+  "login_button": "Submit",
+  "login_loading": "Loading...",
+  "login_success": "Login successful",
+  "login_required_fields": "All fields are required",
+
+
+
+"// SignupScreen": "",
+"ui_create_account": "Create Account",
+"ui_confirm_password": "Confirm Password",
+"ui_signup_button": "Sign Up",
+"ui_have_account": "Already have an account?",
+"ui_signin": "Sign In",
+
 
   "// General": "",
   "ui_token_doesnt_exist": "Token doesn't exist",

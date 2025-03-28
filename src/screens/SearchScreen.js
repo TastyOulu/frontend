@@ -286,28 +286,39 @@ const SearchScreen = () => {
               ) : (
                 restaurants.map(item => (
                   <Card key={item.place_id} style={styles.card} onPress={() => centerMapOnRestaurant(item)}>
-                    <Card.Content>
-                      <View style={styles.titleContainer}>
-                        <Title>{item.name}</Title>
-                        <Button
-                          style={styles.navigateButton}
-                          onPress={() => openMap(item)}
-                          icon={() => <Ionicons name="navigate-outline" size={20} color="#000" />}
-                        />
-                      </View>
-                      <Paragraph>
-                        {item.vicinity || item.formatted_address}
-                        {item.distance !== undefined && ` • ${(item.distance / 1000).toFixed(1)} km`}
-                      </Paragraph>
-                      {item.opening_hours && (
-                        <Paragraph>
-                          {item.opening_hours.open_now ? t('ui_open_now') : t('ui_closed_now')}
-                          {item.opening_hours.weekday_text &&
-                            ` • ${item.opening_hours.weekday_text[new Date().getDay() - 1]}`}
-                        </Paragraph>
-                      )}
-                      {item.rating && <Paragraph>{t('ui_rating')}: {item.rating}</Paragraph>}
-                    </Card.Content>
+                <Card.Content>
+  <View style={styles.titleContainer}>
+    <Title>{item.name}</Title>
+    <Button
+      style={styles.navigateButton}
+      onPress={() => openMap(item)}
+      icon={() => <Ionicons name="navigate-outline" size={20} color="#000" />}
+    />
+  </View>
+
+  <Paragraph>
+    {(item.vicinity || item.formatted_address) +
+      (item.distance !== undefined ? ` • ${(item.distance / 1000).toFixed(1)} km` : '')}
+  </Paragraph>
+
+  {item.opening_hours && (
+  <Paragraph>
+    {item.opening_hours.open_now ? t('ui_open_now') : t('ui_closed_now')}
+    {Array.isArray(item.opening_hours.weekday_text) &&
+      item.opening_hours.weekday_text.length > 0 && (
+        <Text>
+          {' • '}{item.opening_hours.weekday_text[new Date().getDay() - 1]}
+        </Text>
+    )}
+  </Paragraph>
+)}
+
+
+  {item.rating && (
+    <Paragraph>{t('ui_rating')}: {item.rating}</Paragraph>
+  )}
+</Card.Content>
+
                   </Card>
                 ))
               )}
@@ -352,7 +363,7 @@ const styles = StyleSheet.create({
   chip: { margin: 4, borderRadius: 20, paddingHorizontal: 10, backgroundColor: '#f0f0f0' },
   chipSelected: { backgroundColor: '#6200ee' },
   chipTextSelected: { color: 'white', fontWeight: 'bold' },
-  searchButton: { marginBottom: 16,backgroundColor: '#6200ee' },
+  searchButton: { marginBottom: 16, backgroundColor: '#6200ee' },
   restaurantListContainer: { height: 300, marginBottom: 16 },
   restaurantListScroll: { flex: 1 },
   card: { marginVertical: 4 },

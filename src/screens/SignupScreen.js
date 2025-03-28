@@ -65,7 +65,7 @@ export default function SignupScreen({ navigation }) {
                         <Image source={Component} style={{ width: 305, height: 159, resizeMode: 'contain' }} />
                     </View>
 
-                    <Text style={{ fontSize: 50, fontWeight: 'bold' }}>{t('ui_hello')}</Text>
+                    <Text style={{ fontSize: 50, fontWeight: 'bold' }}>{t('ui_hello!')}</Text>
                     <Text>{t('ui_create_account')}</Text>
 
                     <View style={{ width: '90%', marginTop: 20, marginBottom: 10 }}>

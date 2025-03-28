@@ -17,7 +17,6 @@ import SignupScreen from '../screens/SignupScreen';
 import LanguageSwitcher from '../LanguageSwitcher';
 import ForgotPassword from '../screens/ForgotPassword';
 
-
 const Stack = createStackNavigator();
 const Drawer = createDrawerNavigator();
 const Tab = createBottomTabNavigator();
@@ -76,56 +75,109 @@ const TabNavigator = () => (
 
 // Drawer
 const DrawerNavigator = () => {
-    return (
-      <Drawer.Navigator
-        drawerType="slide"
-        screenOptions={({ navigation }) => ({
-          headerShown: true,
-          drawerPosition: "right",
-          statusBarColor: 'red',
-          statusBarStyle: 'dark',
-          drawerActiveBackgroundColor: 'lightblue',
-          drawerInactiveBackgroundColor: 'transparent',
-          drawerActiveTintColor: '#fff',
-          drawerInactiveTintColor: '#333',
-          drawerLabelStyle: {
-            fontSize: 20,
-          },
-          headerStyle: {
-            backgroundColor: 'white',
-            borderBottomWidth: 0,
-          },
-          headerTitle: '',
-          headerLeft: () => <LanguageSwitcher />,
-          headerRight: () => (
-            <TouchableOpacity
-              onPress={() => navigation.dispatch(DrawerActions.toggleDrawer())}
-              style={{ marginRight: 15, padding: 8 }}
-            >
-              <Ionicons name="menu" size={24} color="black" />
-            </TouchableOpacity>
-          ),
-        })}
-      >
-        <Drawer.Screen name="Main" component={TabNavigator} />
-        <Drawer.Screen name="ProfileDrawer" component={ProfileScreen} />
-        <Drawer.Screen name="InfoDrawer" component={InfoScreen} />
-        <Drawer.Screen name="Login" component={LoginScreen} />
-        <Drawer.Screen name="Signup" component={SignupScreen} />
-        <Drawer.Screen name="ForumDrawer" component={ForumScreen} />
-        <Drawer.Screen name="ReviewsDrawer" component={ReviewsScreen} />
-        <Drawer.Screen name="SearchDrawer" component={SearchScreen} />
-      </Drawer.Navigator>
-    );
-  };
-  
+  return (
+    <Drawer.Navigator
+      drawerType="slide"
+      screenOptions={({ navigation }) => ({
+        headerShown: true,
+        drawerPosition: "right",
+        statusBarColor: 'red',
+        statusBarStyle: 'dark',
+        drawerActiveBackgroundColor: 'lightblue',
+        drawerInactiveBackgroundColor: 'transparent',
+        drawerActiveTintColor: '#fff',
+        drawerInactiveTintColor: '#333',
+        drawerLabelStyle: {
+          fontSize: 20,
+        },
+        headerStyle: {
+          backgroundColor: 'white',
+          borderBottomWidth: 0,
+        },
+        headerTitle: '',
+        headerLeft: () => <LanguageSwitcher />,
+        headerRight: () => (
+          <TouchableOpacity
+            onPress={() => navigation.dispatch(DrawerActions.toggleDrawer())}
+            style={{ marginRight: 15, padding: 8 }}
+          >
+            <Ionicons name="menu" size={24} color="black" />
+          </TouchableOpacity>
+        ),
+      })}
+    >
+      <Drawer.Screen
+        name="Main"
+        component={TabNavigator}
+        options={{
+          title: 'Home',
+          drawerIcon: ({ color }) => <Ionicons name="home-outline" size={22} color={color} />,
+        }}
+      />
+      <Drawer.Screen
+        name="ProfileDrawer"
+        component={ProfileScreen}
+        options={{
+          title: 'Profile',
+          drawerIcon: ({ color }) => <Ionicons name="person-outline" size={22} color={color} />,
+        }}
+      />
+      <Drawer.Screen
+        name="InfoDrawer"
+        component={InfoScreen}
+        options={{
+          title: 'Info',
+          drawerIcon: ({ color }) => <Ionicons name="information-circle-outline" size={22} color={color} />,
+        }}
+      />
+      <Drawer.Screen
+        name="Login"
+        component={LoginScreen}
+        options={{
+          drawerIcon: ({ color }) => <Ionicons name="log-in" size={22} color={color} />,
+        }}
+      />
+      <Drawer.Screen
+        name="Signup"
+        component={SignupScreen}
+        options={{
+          drawerIcon: ({ color }) => <Ionicons name="person-add" size={22} color={color} />,
+        }}
+      />
+      <Drawer.Screen
+        name="ForumDrawer"
+        component={ForumScreen}
+        options={{
+          title: 'Forum',
+          drawerIcon: ({ color }) => <Ionicons name="chatbubble" size={22} color={color} />,
+        }}
+      />
+      <Drawer.Screen
+        name="ReviewsDrawer"
+        component={ReviewsScreen}
+        options={{
+          title: 'Reviews',
+          drawerIcon: ({ color }) => <Ionicons name="star" size={22} color={color} />,
+        }}
+      />
+      <Drawer.Screen
+        name="SearchDrawer"
+        component={SearchScreen}
+        options={{
+          title: 'Search',
+          drawerIcon: ({ color }) => <Ionicons name="search" size={22} color={color} />,
+        }}
+      />
+    </Drawer.Navigator>
+  );
+};
 
 // Main stack
 const MainNavigator = () => (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="DrawerRoot" component={DrawerNavigator} />
-        <Stack.Screen name="ForgotPassword" component={ForgotPassword} />
-    </Stack.Navigator>
+  <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Screen name="DrawerRoot" component={DrawerNavigator} />
+    <Stack.Screen name="ForgotPassword" component={ForgotPassword} />
+  </Stack.Navigator>
 );
 
 export default MainNavigator;
