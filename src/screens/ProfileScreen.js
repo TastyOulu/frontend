@@ -23,16 +23,20 @@ export default function ProfileScreen({ navigation }) {
     const [newUsername, setNewUsername] = useState('');
     const [newPassword, setNewPassword] = useState('');
 
-
     const { user, logout, deleteAccount } = useContext(AuthContext);
 
     const REACT_APP_API_URL = Constants.expoConfig?.extra?.REACT_APP_API_URL;
 
     const fetchUserData = async () => {
         try {
-            const token = await SecureStore.getItemAsync('userToken',token);
+            const token = await SecureStore.getItemAsync('userToken');
             if (!token) {
                 console.log("Token doesn't exist");
+                setUsername('Anonymous');
+                setEmail('Not found');
+                setCreatedAt('Not found');
+                setAvatarUri('');
+                setAvatarSeed('Anonymous');
                 return;
             } else {
                 console.log("Token exists");
@@ -44,27 +48,21 @@ export default function ProfileScreen({ navigation }) {
                 },
             });
 
-            const name = response.data?.username
-            const email = response.data?.email
-            const rawDate = response.data?.createdAt
-            const createdAt = rawDate ? new Date(rawDate).toLocaleDateString('fi-FI') : 'Not found'
-            const avatar = response.data?.avatar
+            const name = response.data?.username;
+            const email = response.data?.email;
+            const rawDate = response.data?.createdAt;
+            const createdAt = rawDate ? new Date(rawDate).toLocaleDateString('fi-FI') : 'Not found';
+            const avatar = response.data?.avatar;
 
             if (name && email) {
-                setUsername(name)
-                setEmail(email)
-                setCreatedAt(createdAt)
-                setAvatarUri(avatar)
-                setAvatarSeed(name)
-            } else {
-                setUsername('Anonymous')
-                setEmail('Not found')
-                setCreatedAt('Not found')
-                setAvatarUri('')
-                setAvatarSeed('Anonymous')
+                setUsername(name);
+                setEmail(email);
+                setCreatedAt(createdAt);
+                setAvatarUri(avatar);
+                setAvatarSeed(name);
             }
         } catch (error) {
-            console.error('No users', error);
+            console.error('Error fetching user data:', error);
             setUsername('Anonymous');
             setEmail('Not found');
             setCreatedAt('Not found');
@@ -77,7 +75,6 @@ export default function ProfileScreen({ navigation }) {
         fetchUserData();
     }, []);
 
-
     useEffect(() => {
         generateRandomSeed();
     }, []);
@@ -86,6 +83,8 @@ export default function ProfileScreen({ navigation }) {
         const newSeed = Math.random().toString(36).substring(2, 10);
         setAvatarSeed(newSeed);
     };
+
+    const avatarUrl = avatarUri ? avatarUri : `https://api.dicebear.com/7.x/pixel-art/png?seed=${avatarSeed}`;
 
     const pickImage = async () => {
         const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -106,8 +105,6 @@ export default function ProfileScreen({ navigation }) {
         }
     };
 
-    const avatarUrl = avatarUri ? avatarUri : `https://api.dicebear.com/7.x/pixel-art/png?seed=${avatarSeed}`;
-
     const handleLogout = async () => {
         Alert.alert(
             "Log Out",
@@ -121,13 +118,15 @@ export default function ProfileScreen({ navigation }) {
                     text: "Log Out",
                     onPress: async () => {
                         await logout();
-                        navigation.navigate('Main');
+                        navigation.reset({
+                            index: 0,
+                            routes: [{ name: 'DrawerRoot' }],
+                        });
                     },
                 },
             ],
         );
     };
-
 
     const handleDeleteAccount = async () => {
         Alert.alert(
@@ -159,7 +158,6 @@ export default function ProfileScreen({ navigation }) {
             ],
         );
     };
-
 
     return (
         <GradientBackground>
@@ -221,13 +219,9 @@ export default function ProfileScreen({ navigation }) {
                         />
                     </View>
 
-
                     <Text style={{flex:1,fontSize:24,fontWeight:'bold',marginLeft:10,justifyContent:'center'}}>Welcome back {username}!</Text>
                 </View>
                 <Text style ={{fontSize:20,alignItems:'left',marginHorizontal:20}}>Your score:{/*tähän kerätyt pisteet*/}</Text>
-
-
-
 
                 {/* Show buttons if settings is open */}
                 {showSettings && (
@@ -276,7 +270,8 @@ export default function ProfileScreen({ navigation }) {
                         </View>
                     </ScrollView>
                 )}
-                                    {/* Username Modal */}
+
+                    {/* Username Modal */}
                     <Modal
                         visible={isUsernameModalVisible}
                         animationType="slide"

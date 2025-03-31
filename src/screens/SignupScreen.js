@@ -1,15 +1,15 @@
-import React, { useState } from 'react';
+import React, {useContext, useState} from 'react';
 import { View, Text, StyleSheet, Image, Pressable, KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator } from "react-native";
 import { TextInput } from 'react-native-paper';
 import Component from '../../assets/Component 3.png';
-import Constants from 'expo-constants';
 import PasswordInput from '../components/PasswordInput';
-import axios from 'axios';
 import GradientBackground from '../components/GradientBackground';
 import { useTranslation } from 'react-i18next';
+import { AuthContext } from '../contexts/AuthContext';
 
 export default function SignupScreen({ navigation }) {
     const { t } = useTranslation();
+    const { register } = useContext(AuthContext);
 
     const [formData, setFormData] = useState({ email: '', username: '', password: '' });
     const [message, setMessage] = useState({ error: '', success: '' });
@@ -17,7 +17,6 @@ export default function SignupScreen({ navigation }) {
     const [showPassword, setShowPassword] = useState(false);
 
     const toggleShowPassword = () => setShowPassword(!showPassword);
-    const REACT_APP_API_URL = Constants.expoConfig?.extra?.REACT_APP_API_URL;
 
     const handleSubmit = async () => {
         const { email, username, password } = formData;
@@ -30,28 +29,18 @@ export default function SignupScreen({ navigation }) {
 
         setLoading(true);
 
-        try {
-            const response = await axios.post(`${REACT_APP_API_URL}/auth/register`, {
-                username,
-                email,
-                password,
-            });
+        const result = await register(email, username, password);
 
-            if (response.data) {
-                setMessage({ success: t('ui_registration_success'), error: '' });
-                console.log('Registration successful', response.data);
-
-                setFormData({ email: '', username: '', password: '' });
-                setTimeout(() => setMessage({ success: '', error: '' }), 2000);
-                setTimeout(() => navigation.navigate('Login'), 3000);
-            }
-        } catch (error) {
-            console.error('Error during registration:', error.response?.data || error.message);
-            const errorMessage = error.response?.data?.message || t('ui_registration_failed');
-            setMessage({ error: errorMessage, success: '' });
-        } finally {
-            setLoading(false);
+        if (result.success) {
+            setMessage({ success: t('ui_registration_success'), error: '' });
+            setFormData({ email: '', username: '', password: '' });
+            setTimeout(() => setMessage({ success: '', error: '' }), 2000);
+            setTimeout(() => navigation.navigate('Login'), 2000);
+        } else {
+            setMessage({ error: result.error, success: '' });
+            setTimeout(() => setMessage({ error: '', success: '' }), 2000);
         }
+        setLoading(false);
     };
 
     return (
