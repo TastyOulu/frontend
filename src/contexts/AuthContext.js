@@ -42,6 +42,31 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const register = async (email, username, password) => {
+    setLoading(true);
+    try {
+      const response = await axios.post(`${REACT_APP_API_URL}/auth/register`, {
+        username,
+        email,
+        password,
+      });
+
+      const { token, user } = response.data;
+        await SecureStore.setItemAsync('userToken', token);
+        setUser(user);
+        setError(null);
+        console.log('Registration successful:', response.data);
+        return { success: true };
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || 'Registration failed';
+        console.error('Registration failed:', errorMessage);
+        setError(errorMessage);
+        return { success: false, error: errorMessage };
+    } finally {
+        setLoading(false);
+    }
+  };
+
   const login = async (email, password) => {
     setLoading(true);
     try {
@@ -117,7 +142,7 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   return (
-      <AuthContext.Provider value={{ user, setUser, loading, error, login, logout, checkAuth, deleteAccount }}>
+      <AuthContext.Provider value={{ user, setUser, loading, error, register, login, logout, checkAuth, deleteAccount }}>
         {children}
       </AuthContext.Provider>
   );

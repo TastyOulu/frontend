@@ -33,7 +33,10 @@ export default function LoginScreen({ navigation }) {
 
             setTimeout(() => {
                 setMessage({ error: '', success: '' });
-                navigation.navigate('Main');
+                navigation.reset({
+                    index: 0,
+                    routes: [{ name: 'Main' }],
+                });
             }, 2000);
 
             setFormData({ email: '', password: '' });
