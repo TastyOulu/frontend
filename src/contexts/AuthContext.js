@@ -35,7 +35,6 @@ export const AuthProvider = ({ children }) => {
         setError('No token found');
       }
     } catch (error) {
-      console.error('Auth check failed:', error);
       setError('Auth check failed');
     } finally {
       setLoading(false);

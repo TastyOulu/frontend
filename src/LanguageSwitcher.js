@@ -3,9 +3,9 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 const languages = [
-  { code: 'en', label: 'English 🇬🇧' },
-  { code: 'fi', label: 'Suomi 🇫🇮' },
-  { code: 'sv', label: 'Svenska 🇸🇪' },
+  { code: 'en', label: '🇬🇧' },
+  { code: 'fi', label: '🇫🇮' },
+  { code: 'sv', label: '🇸🇪' },
 ];
 
 const LanguageSwitcher = () => {

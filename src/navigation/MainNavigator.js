@@ -69,7 +69,7 @@ const TabNavigator = () => (
     <Tab.Screen name="Forum" component={ForumScreen} />
     <Tab.Screen name="Reviews" component={ReviewsScreen} />
     <Tab.Screen name="Search" component={SearchScreen} />
-    <Tab.Screen name="Profile" component={ProfileScreen} />
+    {/*<Tab.Screen name="Profile" component={ProfileScreen} />*/}
   </Tab.Navigator>
 );
 
@@ -91,11 +91,24 @@ const DrawerNavigator = () => {
           fontSize: 20,
         },
         headerStyle: {
-          backgroundColor: 'white',
+          backgroundColor: 'red',
           borderBottomWidth: 0,
         },
-        headerTitle: '',
-        headerLeft: () => <LanguageSwitcher />,
+        headerTitle: () => <LanguageSwitcher />,
+        headerLeft: () => {
+            if (navigation.canGoBack()) {
+                return (
+                    <TouchableOpacity
+                        onPress={() => navigation.goBack()}
+                        style={{ marginLeft: 15, padding: 8 }}
+                    >
+                        <Ionicons name="arrow-back" size={24} color="black" />
+                    </TouchableOpacity>
+                );
+            }
+            return null;
+        },
+        headerTitleAlign: 'center',
         headerRight: () => (
           <TouchableOpacity
             onPress={() => navigation.dispatch(DrawerActions.toggleDrawer())}
@@ -168,6 +181,14 @@ const DrawerNavigator = () => {
           drawerIcon: ({ color }) => <Ionicons name="search" size={22} color={color} />,
         }}
       />
+      <Drawer.Screen
+        name="languages"
+        component={LanguageSwitcher}
+        options={{
+          title: 'Languages',
+          drawerIcon: ({ color }) => <Ionicons name="language" size={22} color={color} />,
+        }}
+        />
     </Drawer.Navigator>
   );
 };
@@ -177,6 +198,7 @@ const MainNavigator = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
     <Stack.Screen name="DrawerRoot" component={DrawerNavigator} />
     <Stack.Screen name="ForgotPassword" component={ForgotPassword} />
+    <Stack.Screen name="Login" component={LoginScreen} />
   </Stack.Navigator>
 );
 

@@ -9,6 +9,7 @@ import axios from 'axios';
 import { AuthContext } from "../contexts/AuthContext";
 import Constants from 'expo-constants';
 import { ScrollView } from "react-native-gesture-handler";
+import PasswordInput from "../components/PasswordInput";
 
 export default function ProfileScreen({ navigation }) {
     const [avatarUri, setAvatarUri] = useState('')
@@ -22,6 +23,10 @@ export default function ProfileScreen({ navigation }) {
     const [isPasswordModalVisible, setPasswordModalVisible] = useState(false);
     const [newUsername, setNewUsername] = useState('');
     const [newPassword, setNewPassword] = useState('');
+    const [oldPassword, setOldPassword] = useState('');
+
+    const [showPassword, setShowPassword] = useState(false);
+    const toggleShowPassword = () => setShowPassword(!showPassword);
 
     const { user, logout, deleteAccount } = useContext(AuthContext);
 
@@ -282,11 +287,12 @@ export default function ProfileScreen({ navigation }) {
                             <View style={{backgroundColor:'white',padding:20,borderRadius:10,width:'80%',alignItems:'center'}}>
                                 <Text style={{fontSize:26,fontWeight:'bold',marginBottom:20,textAlign:'center'}}>Change Username</Text>
                                 <TextInput
-                                    placeholder="Enter new username"
-                                    value={newUsername}
+                                    placeholder="Enter your email"
+                                    value={email}
                                     onChangeText={setNewUsername}
                                     style={{borderWidth: 1,borderColor: '#ccc',borderRadius: 10,padding: 10,marginBottom: 20,width:200}}
                                 />
+                                
                                 <View style={{flexDirection:'column',alignItems:'center',width:'100%'}}>
                                     <Pressable style={{width:'100%',backgroundColor:'#6200EA',borderRadius:30,paddingVertical: 12,
                                             paddingHorizontal: 32,marginTop: 20}} onPress={() => {
@@ -315,9 +321,26 @@ export default function ProfileScreen({ navigation }) {
                             <View style={{backgroundColor:'white',padding:20,borderRadius:10,width:'80%',alignItems:'center'}}>
                                 <Text style={{fontSize:26,fontWeight:'bold',marginBottom:20,textAlign:'center'}}>Change Password</Text>
                                 <TextInput
-                                    placeholder="Enter new password"
-                                    value={newPassword}
+                                    placeholder="Enter your email"
+                                    value={email}
+                                    onChangeText={setOldPassword}
+                                    left={<TextInput.Icon icon="email" />}
+                                    style={{borderWidth: 1,borderColor: '#ccc',borderRadius: 10,padding: 10,marginBottom: 20,width:'100%'}}
+                                />
+                                <PasswordInput
+                                    value={oldPassword}
+                                    onChangeText={setOldPassword}
+                                    showPassword={showPassword}
+                                    toggleShowPassword={toggleShowPassword}
+                                    placeholder="Enter old password"
                                     secureTextEntry
+                                    style={{borderWidth: 1,borderColor: '#ccc',borderRadius: 10,padding: 10,marginBottom: 20,width:200}}
+                                />
+                                 <PasswordInput 
+                                    value={newPassword}
+                                    placeholder="Enter new password"
+                                    showPassword={showPassword}
+                                    toggleShowPassword={toggleShowPassword}
                                     onChangeText={setNewPassword}
                                     style={{borderWidth: 1,borderColor: '#ccc',borderRadius: 10,padding: 10,marginBottom: 20,width:200}}
                                 />

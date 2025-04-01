@@ -305,11 +305,11 @@ const SearchScreen = () => {
   <Paragraph>
     {item.opening_hours.open_now ? t('ui_open_now') : t('ui_closed_now')}
     {Array.isArray(item.opening_hours.weekday_text) &&
-      item.opening_hours.weekday_text.length > 0 && (
-        <Text>
-          {' • '}{item.opening_hours.weekday_text[new Date().getDay() - 1]}
-        </Text>
-    )}
+      item.opening_hours.weekday_text.length > 0 && 
+        
+           `• ${item.opening_hours.weekday_text[new Date().getDay() - 1]}`}
+        
+    
   </Paragraph>
 )}
 
