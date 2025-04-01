@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, Image, FlatList,
   StyleSheet, Modal, KeyboardAvoidingView, Platform, ScrollView,
-  TouchableWithoutFeedback
+  TouchableWithoutFeedback, Alert
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
@@ -14,7 +14,6 @@ import { useTranslation } from 'react-i18next';
 
 const ReviewScreen = () => {
   const { t } = useTranslation();
-
   const [restaurant, setRestaurant] = useState('');
   const [review, setReview] = useState('');
   const [rating, setRating] = useState(0);
@@ -24,7 +23,6 @@ const ReviewScreen = () => {
   const [selectedReview, setSelectedReview] = useState(null);
   const [fetchedRestaurants, setFetchedRestaurants] = useState([]);
   const [username, setUsername] = useState(null);
-  const [editingReview, setEditingReview] = useState(null);
   const [isUserLoading, setIsUserLoading] = useState(true);
 
   const GOOGLE_PLACES_API_KEY = Constants.expoConfig?.extra?.googlePlacesApiKey;
@@ -35,10 +33,10 @@ const ReviewScreen = () => {
       try {
         const token = await SecureStore.getItemAsync('userToken');
         if (!token) throw new Error('No token');
-        const response = await axios.get(`${REACT_APP_API_URL}/user/info`, {
+        const { data } = await axios.get(`${REACT_APP_API_URL}/user/info`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        setUsername(response.data?.username || 'Anonymous');
+        setUsername(data?.username || 'Anonymous');
       } catch {
         setUsername('Anonymous');
       } finally {
@@ -47,6 +45,54 @@ const ReviewScreen = () => {
     };
     fetchUserInfo();
   }, []);
+
+  useEffect(() => {
+    const fetchReviews = async () => {
+      try {
+        const token = await SecureStore.getItemAsync('userToken');
+        if (!token) return;
+        const response = await axios.get(`${REACT_APP_API_URL}/reviews`, {
+          headers: { Authorization: `Bearer ${token}` },
+          validateStatus: status => status < 500
+        });
+        if (response.status === 404) {
+          setReviews([]);
+          return;
+        }
+        if (Array.isArray(response.data)) {
+          const mapped = response.data.map(r => ({
+            id: r.reviewId?.toString() || Math.random().toString(),
+            restaurant: `Restaurant ID ${r.restaurantId}`,
+            review: r.review,
+            rating: 0,
+            image: null,
+            username: 'User',
+            date: new Date(r.createdAt).toLocaleString(),
+            upVotes: 0,
+            downVotes: 0,
+            userVote: null,
+          }));
+          setReviews(mapped);
+        }
+      } catch (error) {
+        console.error('Failed to fetch reviews:', error);
+        Alert.alert('Error', 'Unable to load reviews.');
+      }
+    };
+    fetchReviews();
+  }, []);
+
+  useEffect(() => {
+    if (restaurant) fetchRestaurants(restaurant);
+    else setFetchedRestaurants([]);
+  }, [restaurant]);
+
+  useEffect(() => {
+    if (selectedReview) {
+      const updated = reviews.find(r => r.id === selectedReview.id);
+      if (updated) setSelectedReview(updated);
+    }
+  }, [reviews]);
 
   const handleStarPress = index => setRating(index + 1);
 
@@ -60,23 +106,34 @@ const ReviewScreen = () => {
     if (!result.canceled) setImage(result.assets[0].uri);
   };
 
-  const submitReview = () => {
+  const submitReview = async () => {
     if (isUserLoading) {
       alert(t('ui_loading_user_info'));
       return;
     }
-
+    if (!username || username === 'Anonymous') {
+      Alert.alert('Authentication Required', 'Please log in first to submit reviews.');
+      return;
+    }
     if (restaurant && review && rating) {
-      if (editingReview) {
-        const updated = reviews.map(r =>
-          r.id === editingReview
-            ? { ...r, restaurant, review, rating, image }
-            : r
+      try {
+        const token = await SecureStore.getItemAsync('userToken');
+        if (!token) {
+          Alert.alert('Error', 'Authentication token missing.');
+          return;
+        }
+        const response = await axios.post(
+          `${REACT_APP_API_URL}/review`,
+          { restaurantId: "1", review },
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+          }
         );
-        setReviews(updated);
-        setEditingReview(null);
-      } else {
         const newReview = {
+          ...response.data,
           id: Math.random().toString(),
           restaurant,
           review,
@@ -89,12 +146,17 @@ const ReviewScreen = () => {
           userVote: null,
         };
         setReviews([newReview, ...reviews]);
+        setRestaurant('');
+        setReview('');
+        setRating(0);
+        setImage(null);
+        Alert.alert('Success', 'Review submitted successfully!');
+      } catch (error) {
+        console.error('Failed to submit review:', error);
+        Alert.alert('Error', 'Failed to submit review.');
       }
-
-      setRestaurant('');
-      setReview('');
-      setRating(0);
-      setImage(null);
+    } else {
+      Alert.alert('Missing Fields', 'Please fill in all fields.');
     }
   };
 
@@ -109,24 +171,14 @@ const ReviewScreen = () => {
         if (r.id !== id) return r;
         const { upVotes, downVotes, userVote } = r;
         if (userVote === type) return r;
-        if (userVote === 'up' && type === 'down') return { ...r, upVotes: upVotes - 1, downVotes: downVotes + 1, userVote: 'down' };
-        if (userVote === 'down' && type === 'up') return { ...r, downVotes: downVotes - 1, upVotes: upVotes + 1, userVote: 'up' };
+        if (userVote === 'up' && type === 'down')
+          return { ...r, upVotes: upVotes - 1, downVotes: downVotes + 1, userVote: 'down' };
+        if (userVote === 'down' && type === 'up')
+          return { ...r, downVotes: downVotes - 1, upVotes: upVotes + 1, userVote: 'up' };
         return { ...r, [`${type}Votes`]: (type === 'up' ? upVotes : downVotes) + 1, userVote: type };
       })
     );
   };
-
-  useEffect(() => {
-    if (restaurant) fetchRestaurants(restaurant);
-    else setFetchedRestaurants([]);
-  }, [restaurant]);
-
-  useEffect(() => {
-    if (selectedReview) {
-      const updated = reviews.find(r => r.id === selectedReview.id);
-      if (updated) setSelectedReview(updated);
-    }
-  }, [reviews]);
 
   const fetchRestaurants = async query => {
     const keyword = `${query.trim()} in Oulu`;
@@ -147,20 +199,26 @@ const ReviewScreen = () => {
     <GradientBackground>
       <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <FlatList
-          nestedScrollEnabled
-          keyboardShouldPersistTaps="handled"
           data={reviews}
           keyExtractor={item => item.id}
           ListHeaderComponent={
             <View style={styles.contentWrapper}>
               <Text style={styles.title}>{t('ui_submit_review')}</Text>
               <View style={styles.searchSection}>
-                <TextInput value={restaurant} onChangeText={setRestaurant} placeholder={t('ui_restaurant_name')} style={styles.searchInput} />
-                {!!fetchedRestaurants.length && (
+                <TextInput
+                  value={restaurant}
+                  onChangeText={setRestaurant}
+                  placeholder={t('ui_restaurant_name')}
+                  style={styles.searchInput}
+                />
+                {fetchedRestaurants.length > 0 && (
                   <View style={styles.listContainer}>
-                    <ScrollView style={{ maxHeight: 200 }} nestedScrollEnabled>
+                    <ScrollView style={{ maxHeight: 200 }}>
                       {fetchedRestaurants.slice(0, 10).map(item => (
-                        <TouchableOpacity key={item.place_id} onPress={() => { setRestaurant(item.name); setFetchedRestaurants([]); }}>
+                        <TouchableOpacity
+                          key={item.place_id}
+                          onPress={() => { setRestaurant(item.name); setFetchedRestaurants([]); }}
+                        >
                           <View style={styles.listItem}>
                             <Text style={styles.listTitle}>{item.name}</Text>
                             <Text style={styles.listAddress}>{item.formatted_address}</Text>
@@ -171,11 +229,19 @@ const ReviewScreen = () => {
                   </View>
                 )}
               </View>
-              <TextInput value={review} onChangeText={setReview} placeholder={t('ui_description')} multiline style={styles.input} />
+              <TextInput
+                value={review}
+                onChangeText={setReview}
+                placeholder={t('ui_description')}
+                multiline
+                style={styles.input}
+              />
               <View style={styles.starContainer}>
                 {[...Array(5)].map((_, i) => (
                   <TouchableOpacity key={i} onPress={() => handleStarPress(i)}>
-                    <Text style={i < rating ? styles.filledStar : styles.star}>{i < rating ? '★' : '☆'}</Text>
+                    <Text style={i < rating ? styles.filledStar : styles.star}>
+                      {i < rating ? '★' : '☆'}
+                    </Text>
                   </TouchableOpacity>
                 ))}
               </View>
@@ -188,9 +254,7 @@ const ReviewScreen = () => {
                 style={[styles.submitButton, isUserLoading && { backgroundColor: '#ccc' }]}
                 disabled={isUserLoading}
               >
-                <Text style={styles.submitButtonText}>
-                  {editingReview ? t('ui_update_review') : t('ui_submit_review')}
-                </Text>
+                <Text style={styles.submitButtonText}>{t('ui_submit_review')}</Text>
               </TouchableOpacity>
               <Text style={styles.reviewHeaderText}>{t('ui_reviews')}</Text>
             </View>
@@ -213,7 +277,9 @@ const ReviewScreen = () => {
                   <Text style={styles.reviewTitle}>{item.restaurant}</Text>
                   <Text style={styles.reviewDescription}>{item.review}</Text>
                   <Text style={styles.reviewRating}>{'⭐'.repeat(item.rating)}</Text>
-                  <Text style={{ fontStyle: 'italic', color: '#666' }}>{t('ui_by')}: {item.username}</Text>
+                  <Text style={{ fontStyle: 'italic', color: '#666' }}>
+                    {t('ui_by')}: {item.username}
+                  </Text>
                 </View>
                 <Text style={styles.reviewDate}>{item.date}</Text>
               </TouchableOpacity>
@@ -231,9 +297,10 @@ const ReviewScreen = () => {
                 {selectedReview?.image && <Image source={{ uri: selectedReview.image }} style={styles.modalImage} />}
                 <Text style={styles.modalText}>{selectedReview?.review}</Text>
                 <Text style={styles.modalRating}>{'⭐'.repeat(selectedReview?.rating || 0)}</Text>
-                <Text style={{ fontStyle: 'italic', color: '#666' }}>{t('ui_by')}: {selectedReview?.username}</Text>
+                <Text style={{ fontStyle: 'italic', color: '#666' }}>
+                  {t('ui_by')}: {selectedReview?.username}
+                </Text>
                 <Text style={{ fontSize: 12, color: '#999', marginTop: 5 }}>{selectedReview?.date}</Text>
-
                 <View style={styles.modalThumbContainer}>
                   <TouchableOpacity onPress={() => voteHandler(selectedReview.id, 'up')}>
                     <Ionicons name="thumbs-up" size={32} color={selectedReview?.userVote === 'up' ? '#6200EA' : '#888'} />
@@ -244,23 +311,6 @@ const ReviewScreen = () => {
                   </TouchableOpacity>
                   <Text style={{ marginLeft: 10 }}>{selectedReview?.downVotes}</Text>
                 </View>
-
-                {selectedReview?.username === username && (
-                  <TouchableOpacity
-                    style={[styles.closeButton, { backgroundColor: '#FFA500', marginBottom: 10 }]}
-                    onPress={() => {
-                      setRestaurant(selectedReview.restaurant);
-                      setReview(selectedReview.review);
-                      setRating(selectedReview.rating);
-                      setImage(selectedReview.image || null);
-                      setEditingReview(selectedReview.id);
-                      setModalVisible(false);
-                    }}
-                  >
-                    <Text style={styles.closeButtonText}>{t('ui_edit')}</Text>
-                  </TouchableOpacity>
-                )}
-
                 <TouchableOpacity style={styles.closeButton} onPress={() => setModalVisible(false)}>
                   <Text style={styles.closeButtonText}>{t('ui_close')}</Text>
                 </TouchableOpacity>
