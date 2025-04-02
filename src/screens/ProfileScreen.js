@@ -19,6 +19,8 @@ export default function ProfileScreen({ navigation }) {
     const [email, setEmail] = useState('')
     const [createdAt, setCreatedAt] = useState('')
     const [showSettings, setShowSettings] = useState(false)
+    const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+
 
     const [isUsernameModalVisible, setUsernameModalVisible] = useState(false);
     const [isPasswordModalVisible, setPasswordModalVisible] = useState(false);
@@ -29,7 +31,7 @@ export default function ProfileScreen({ navigation }) {
     const [showPassword, setShowPassword] = useState(false);
     const toggleShowPassword = () => setShowPassword(!showPassword);
 
-    const { user, logout, deleteAccount } = useContext(AuthContext);
+    const { user,setUser, logout, deleteAccount } = useContext(AuthContext);
 
     const REACT_APP_API_URL = Constants.expoConfig?.extra?.REACT_APP_API_URL;
 
@@ -43,6 +45,8 @@ export default function ProfileScreen({ navigation }) {
                 setCreatedAt('Not found');
                 setAvatarUri('');
                 setAvatarSeed('Anonymous');
+                setIsCheckingAuth(false); // <- tärkeä
+              
                 return;
             } else {
                 console.log("Token exists");
@@ -66,6 +70,7 @@ export default function ProfileScreen({ navigation }) {
                 setCreatedAt(createdAt);
                 setAvatarUri(avatar);
                 setAvatarSeed(name);
+                setUser(response.data); // <-- Tämä on tärkeä
             }
         } catch (error) {
             console.error('Error fetching user data:', error);
@@ -74,6 +79,8 @@ export default function ProfileScreen({ navigation }) {
             setCreatedAt('Not found');
             setAvatarUri('');
             setAvatarSeed('Anonymous');
+        } finally {
+            setIsCheckingAuth(false); // <- tärkeä
         }
     };
 
@@ -84,6 +91,15 @@ export default function ProfileScreen({ navigation }) {
     useEffect(() => {
         generateRandomSeed();
     }, []);
+
+    useEffect(() => {
+        if (!isCheckingAuth && !user) {
+            navigation.reset({
+                index: 0,
+                routes: [{ name: 'Login' }],
+            });
+        } 
+    }, [user,isCheckingAuth]);
 
     const generateRandomSeed = () => {
         const newSeed = Math.random().toString(36).substring(2, 10);
