@@ -1,5 +1,6 @@
 import React, { useContext, useEffect,useState } from "react";
-import {View, Text, StyleSheet,Pressable,Image,TextInput,Modal} from "react-native";
+import {View, Text, StyleSheet,Pressable,Image,Modal} from "react-native";
+import {TextInput} from "react-native-paper";
 import * as ImagePicker from 'expo-image-picker'
 import { Alert } from 'react-native'
 import { IconButton } from 'react-native-paper';
@@ -9,7 +10,7 @@ import axios from 'axios';
 import { AuthContext } from "../contexts/AuthContext";
 import Constants from 'expo-constants';
 import { ScrollView } from "react-native-gesture-handler";
-import PasswordInput from "../components/PasswordInput";
+import PasswordInput  from "../components/PasswordInput";
 
 export default function ProfileScreen({ navigation }) {
     const [avatarUri, setAvatarUri] = useState('')
@@ -323,7 +324,7 @@ export default function ProfileScreen({ navigation }) {
                                 <TextInput
                                     placeholder="Enter your email"
                                     value={email}
-                                    onChangeText={setOldPassword}
+                                    onChangeText={setEmail}
                                     left={<TextInput.Icon icon="email" />}
                                     style={{borderWidth: 1,borderColor: '#ccc',borderRadius: 10,padding: 10,marginBottom: 20,width:'100%'}}
                                 />
@@ -346,9 +347,24 @@ export default function ProfileScreen({ navigation }) {
                                 />
                                 <View style={{flexDirection:'column',alignItems:'center',width:'100%'}}>
                                     <Pressable style={{width:'100%',backgroundColor:'#6200EA',borderRadius:30,paddingVertical: 12,
-                                            paddingHorizontal: 32,marginTop: 20}} onPress={() => {
-                                        console.log("New password submitted:", newPassword)
-                                        setPasswordModalVisible(false);
+                                            paddingHorizontal: 32,marginTop: 20}} onPress={async () => {
+                                                try {
+                                                    const response = await axios.post(`${REACT_APP_API_URL}/auth/change-password`, {
+                                                        email,
+                                                        oldPassword,
+                                                        newPassword,
+                                                })
+
+                                                Alert.alert("Success", response.data.message)
+                                                setPasswordModalVisible(false);
+                                                setOldPassword('')
+                                                setNewPassword('')
+                                                }catch (error) {
+                                                    const message = error.response?.data?.message || "Failed to change password"
+                                                    Alert.alert("Error",message)
+                                                    console.error("Failed to change password:", error)
+                                                }
+                                        
                                     }}>
                                         <Text style={{textAlign:'center',color:'white'}}>Confirm new password</Text>
                                     </Pressable>
