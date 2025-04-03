@@ -45,32 +45,37 @@ export default function ProfileScreen({ navigation }) {
                 setCreatedAt('Not found');
                 setAvatarUri('');
                 setAvatarSeed('Anonymous');
-                setIsCheckingAuth(false); // <- tärkeä
-              
+                setIsCheckingAuth(false);
                 return;
-            } else {
-                console.log("Token exists");
             }
-
+    
             const response = await axios.get(`${REACT_APP_API_URL}/user/info`, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                 },
             });
-
+    
             const name = response.data?.username;
             const email = response.data?.email;
             const rawDate = response.data?.createdAt;
             const createdAt = rawDate ? new Date(rawDate).toLocaleDateString('fi-FI') : 'Not found';
             const avatar = response.data?.avatar;
-
+    
             if (name && email) {
                 setUsername(name);
                 setEmail(email);
                 setCreatedAt(createdAt);
-                setAvatarUri(avatar);
+    
+                if (avatar === 'ok') {
+                    setAvatarUri(`${REACT_APP_API_URL}/user/avatar`);
+                } else if (avatar) {
+                    setAvatarUri(avatar);
+                } else {
+                    setAvatarUri(`https://api.dicebear.com/7.x/pixel-art/png?seed=${name}`);
+                }
+    
                 setAvatarSeed(name);
-                setUser(response.data); // <-- Tämä on tärkeä
+                setUser(response.data);
             }
         } catch (error) {
             console.error('Error fetching user data:', error);
@@ -80,18 +85,45 @@ export default function ProfileScreen({ navigation }) {
             setAvatarUri('');
             setAvatarSeed('Anonymous');
         } finally {
-            setIsCheckingAuth(false); // <- tärkeä
+            setIsCheckingAuth(false);
+        }
+    };
+    
+    const fetchUserAvatar = async () => {
+        try {
+            const token = await SecureStore.getItemAsync('userToken');
+            if (!token) throw new Error('No token found');
+    
+            const response = await axios.get(`${REACT_APP_API_URL}/user/avatar`, {
+                headers: { Authorization: `Bearer ${token}` },
+                responseType: 'blob',
+            });
+
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setAvatarUri(reader.result); 
+            };
+            reader.readAsDataURL(response.data);
+        } catch (error) {
+            console.error('Error fetching user avatar:', error);
+            setAvatarUri('');
         }
     };
 
     useEffect(() => {
         fetchUserData();
     }, []);
+    
+    useEffect(() => {
+        if (!avatarUri) {
+            fetchUserAvatar();
+        }
+    }, [avatarUri]);
 
     useEffect(() => {
         generateRandomSeed();
     }, []);
-
+    
     useEffect(() => {
         if (!isCheckingAuth && !user) {
             navigation.reset({
@@ -105,8 +137,8 @@ export default function ProfileScreen({ navigation }) {
         const newSeed = Math.random().toString(36).substring(2, 10);
         setAvatarSeed(newSeed);
     };
-
-    const avatarUrl = avatarUri ? avatarUri : `https://api.dicebear.com/7.x/pixel-art/png?seed=${avatarSeed}`;
+    
+    const avatarUrl = avatarUri || `https://api.dicebear.com/7.x/pixel-art/png?seed=${avatarSeed}`;
 
     const pickImage = async () => {
         const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -123,7 +155,31 @@ export default function ProfileScreen({ navigation }) {
         });
 
         if (!result.canceled) {
-            setAvatarUri(result.assets[0].uri);
+            const selectedImage = result.assets[0].uri;
+            setAvatarUri(selectedImage);
+        
+            const token = await SecureStore.getItemAsync('userToken');
+            const formData = new FormData();
+            formData.append('file', {
+                uri: selectedImage,
+                name: 'avatar.jpg',
+                type: 'image/jpeg',
+            });
+
+            try {
+                await axios.post(`${REACT_APP_API_URL}/update/avatar`, formData, {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        'Content-Type': 'multipart/form-data',
+                    },
+                });                
+                Alert.alert("Success", "Avatar updated successfully");
+                fetchUserData();
+            } catch (error) {
+                Alert.alert("Error", "Failed to update avatar");
+                console.error("Failed to update avatar:", error);
+            }
+            
         }
     };
 
