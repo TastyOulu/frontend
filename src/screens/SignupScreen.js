@@ -18,12 +18,34 @@ export default function SignupScreen({ navigation }) {
 
     const toggleShowPassword = () => setShowPassword(!showPassword);
 
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/; // email must be in valid format
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{8,}$/; // pswd must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, and one number
+    const usernameRegex = /^[a-zA-Z0-9_]{3,15}$/; // username must be 3-15 characters long and can contain letters, numbers, and underscores
+
     const handleSubmit = async () => {
         const { email, username, password } = formData;
 
         if (!email || !username || !password) {
             setMessage({ error: t('ui_all_fields_required'), success: '' });
             setTimeout(() => setMessage({ error: '', success: '' }), 2000);
+            return;
+        }
+        
+        if (!emailRegex.test(email)) {
+            setMessage({ error: t('ui_invalid_email'), success: '' });
+            setTimeout(() => setMessage({ error: '', success: '' }), 2000);
+            return;
+        }
+        
+        if (!usernameRegex.test(username)) {
+            setMessage({ error: t('ui_invalid_username'), success: '' });
+            setTimeout(() => setMessage({ error: '', success: '' }), 2000);
+            return;
+        }
+        
+        if (!passwordRegex.test(password)) {
+            setMessage({ error: t('ui_invalid_password_details'), success: '' });
+            setTimeout(() => setMessage({ error: '', success: '' }), 5000);
             return;
         }
 

@@ -75,6 +75,12 @@
     "ui_signup_button": "Registrera dig",
     "ui_have_account": "Har du redan ett konto?",
     "ui_signin": "Logga in",
+    "ui_invalid_email": "Ogiltig e-postadress",
+    "ui_invalid_username": "Ogiltigt användarnamn",
+    "ui_invalid_password": "Ogiltigt lösenord",
+    "ui_invalid_password_details": "Lösenordet måste vara minst 8 tecken långt och innehålla minst en stor bokstav, en liten bokstav och en siffra",
+    "ui_registration_success": "Registreringen lyckades",
+    
 
     "// General": "",
     "ui_token_doesnt_exist": "Token finns inte",
