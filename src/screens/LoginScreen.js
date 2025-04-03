@@ -18,11 +18,21 @@ export default function LoginScreen({ navigation }) {
 
     const toggleShowPassword = () => setShowPassword(!showPassword);
 
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/; // email must be in valid format
+
     const handleSubmit = async () => {
         const { email, password } = formData;
 
         if (!email || !password) {
             alert(t('login_required_fields'));
+            return;
+        }
+
+        if (!emailRegex.test(email)) {
+            setMessage({ ...message, error: t('ui_invalid_email') });
+            setTimeout(() => {
+                setMessage({ error: '', success: '' });
+            }, 2000);
             return;
         }
 

@@ -72,6 +72,11 @@
 "ui_signup_button": "Sign Up",
 "ui_have_account": "Already have an account?",
 "ui_signin": "Sign In",
+"ui_invalid_email": "Invalid email address",
+"ui_invalid_username": "Invalid username",
+"ui_invalid_password": "Invalid password",
+"ui_invalid_password_details": "Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, and one number",
+"ui_registration_success": "Registration successful",
 
 
   "// General": "",
