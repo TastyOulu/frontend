@@ -106,13 +106,20 @@
   "ui_how_to_earn_points": "Miten ansaita pisteitä?",
   "ui_earn_points_description": "Ansaitse pisteitä kirjoittamalla arvosteluja ja saamalla tykkäyksiä muilta käyttäjiltä.",
   "ui_three_stages": "Mitkä ovat kolme tasoa?",
-  "ui_milestones_description": "Saat tunnuksia seuraavissa pistemäärissä:",
+  "ui_milestones_description": "Saat palkintoja seuraavilla pistemäärillä:",
   "ui_30_points": "30 pistettä",
   "ui_60_points": "60 pistettä",
   "ui_100_points": "100 pistettä",
   "ui_why_earn_points": "Miksi ansaita pisteitä?",
-  "ui_why_earn_description": "Pisteiden ansaitseminen motivoi jättämään arvokkaita arvosteluja. Saavuta tasoja ja ansaitse merkkejä käyttäjänimesi viereen!",
+  "ui_why_earn_description": "Pisteiden ansaitseminen motivoi sinua jättämään arvokkaita arvosteluja. Saavuta välitavoitteita ansaitaksesi merkkejä, jotka näkyvät käyttäjätunnuksesi vieressä!",
   "ui_contact_description": "Jos sinulla on kysyttävää tai tarvitset apua, ota rohkeasti yhteyttä meihin.",
-  "ui_phone": "Puhelin"
-       
+  "ui_phone": "Puhelin",
+  "ui_do_points_expire": "Vanhenevatko pisteet?",
+  "ui_points_expire_description": "Pisteesi vanhenevat 12 kuukauden käyttämättömyyden jälkeen. Muista käyttää sovellusta säännöllisesti pitääksesi pisteesi aktiivisina!",
+  
+  "// CHATBOT": "",
+  "ui_chatbot_hey": "Hei! Olen tekoälyavustajasi. Miten voin auttaa sinua tänään?",
+  "ui_chatbot_placeholder": "Kirjoita viesti...",
+  "ui_chatbot_error": "Olen pahoillani, mutta en voi auttaa sinua juuri nyt."
+
 }

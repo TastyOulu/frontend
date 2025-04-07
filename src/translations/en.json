@@ -116,7 +116,14 @@
   "ui_why_earn_points": "Why earn points?",
   "ui_why_earn_description": "Earning points motivates you to leave valuable reviews. Reach milestones to earn badges displayed next to your username!",
   "ui_contact_description": "If you have any questions or need help, feel free to reach out to us.",
-  "ui_phone": "Phone"
+  "ui_phone": "Phone",
+  "ui_do_points_expire": "Do points expire?",
+  "ui_points_expire_description": "Your points will expire after 12 months of inactivity. Make sure to use the app regularly to keep your points active!",
 
-        
+"// CHATBOT": "",
+"ui_chatbot_hey": "Hello! I'm your AI assistant. How can I help you today?",
+"ui_chatbot_placeholder": "Write a message...",
+"ui_chatbot_error": "I'm sorry, I can't help you with that right now."
+
+
 }

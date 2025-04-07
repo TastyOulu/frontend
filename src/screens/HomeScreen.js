@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 
 import GradientBackground from '../components/GradientBackground';
 import AdCarousel from '../components/AdCarousel';
+import Top5Carousel from '../components/top5Carousel';
 import AIBot from '../components/AIBot';
 
 const Component = require('../../assets/Component 3.png');
@@ -37,11 +38,16 @@ export default function HomeScreen({ navigation }) {
           </View>
 
           <View>
-            <Text style={{ fontSize: 24, fontWeight: 'bold', marginTop: 10 }}>{t('ui_top_5')}</Text>
+          <Text style={{ fontSize: 24, fontWeight: 'bold', marginTop: 20, marginBottom: 20, textAlign: 'center' }}>
+            {t('ui_top_5')}
+            </Text>
+            <Top5Carousel />
           </View>
         </View>
-        <AIBot />
       </ScrollView>
+      <View style={styles.fabContainer}>
+          <AIBot />
+        </View>
     </GradientBackground>
   );
 }

@@ -109,7 +109,15 @@
     "ui_60_points": "60 poäng",
     "ui_100_points": "100 poäng",
     "ui_why_earn_points": "Varför tjäna poäng?",
-    "ui_why_earn_description": "Att tjäna poäng motiverar dig att lämna värdefulla recensioner. Nå milstolpar och visa märken bredvid ditt användarnamn!",
-    "ui_phone": "Telefon"     
+    "ui_why_earn_description": "Att tjäna poäng motiverar dig att lämna värdefulla recensioner. Uppnå milstolpar för att tjäna märken som visas bredvid ditt användarnamn!",
+    "ui_phone": "Telefon",
+    "ui_do_points_expire": "Förfaller poäng?",
+    "ui_points_expire_description": "Dina poäng kommer att förfalla efter 12 månaders inaktivitet. Se till att använda appen regelbundet för att hålla dina poäng aktiva!",
+
+    "// CHATBOT": "",
+    "ui_chatbot_hey": "Hallå där! Jag är din AI-assistent. Hur kan jag hjälpa dig idag?",
+    "ui_chatbot_placeholder": "Skriv ett meddelande...",
+    "ui_chatbot_error": "Jag är ledsen, men jag kan inte hjälpa dig med det just nu."
+  
   }
   
