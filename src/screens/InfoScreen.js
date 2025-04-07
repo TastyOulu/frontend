@@ -7,12 +7,14 @@ import {
   ScrollView,
   Linking,
   TouchableOpacity,
+  Dimensions
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import GradientBackground from '../components/GradientBackground';
 import { useTranslation } from 'react-i18next'; 
 
 const faqImage = require('../../assets/FAQ.png');
+const { height, width } = Dimensions.get('window');
 
 const IconRow = () => {
   const { t } = useTranslation();
@@ -45,6 +47,7 @@ export default function InfoScreen() {
       </View>
       <ScrollView contentContainerStyle={styles.scrollViewContent}>
         <View style={styles.container}>
+
           <View style={[styles.box, styles.box1]}>
             <Text style={styles.boxTitle}>{t('ui_how_to_earn_points')}</Text>
             <Text style={styles.subtitle}>{t('ui_earn_points_description')}</Text>
@@ -52,7 +55,11 @@ export default function InfoScreen() {
 
           <View style={[styles.box, styles.box2]}>
             <Text style={styles.boxTitle}>{t('ui_three_stages')}</Text>
-            <Text style={[styles.subtitle, { fontSize: 14 }]}>{t('ui_milestones_description')}</Text>
+            <Text
+              style={[styles.subtitle, { fontSize: 14, flexWrap: 'wrap' }]}
+            >
+              {t('ui_milestones_description')}
+            </Text>
             <IconRow />
           </View>
 
@@ -61,17 +68,22 @@ export default function InfoScreen() {
             <Text style={styles.subtitle}>{t('ui_why_earn_description')}</Text>
           </View>
 
+          <View style={[styles.box, styles.box4]}>
+            <Text style={styles.boxTitle}>{t('ui_do_points_expire')}</Text>
+            <Text style={styles.subtitle}>{t('ui_points_expire_description')}</Text>
+          </View>
+
           <View style={[styles.contactBox, styles.box]}>
             <Text style={styles.boxTitle}>{t('ui_contact_us')}</Text>
             <Text style={styles.contactSubtitle}>{t('ui_contact_description')}</Text>
             <View style={styles.contactRow}>
-              <Text style={styles.contactText}>{t('ui_email')}:</Text>
+              <Text style={styles.contactText}>{t('ui_email')}: </Text>
               <TouchableOpacity onPress={() => Linking.openURL('mailto:tastyoulu@bestcompany.com')}>
                 <Text style={styles.linkText}>tastyoulu@bestcompany.com</Text>
               </TouchableOpacity>
             </View>
             <View style={styles.contactRow}>
-              <Text style={styles.contactText}>{t('ui_phone')}:</Text>
+              <Text style={styles.contactText}>{t('ui_phone')}: </Text>
               <TouchableOpacity onPress={() => Linking.openURL('tel:+358401231234')}>
                 <Text style={styles.linkText}>+358 40 1231234</Text>
               </TouchableOpacity>
@@ -121,6 +133,9 @@ const styles = StyleSheet.create({
   box3: {
     backgroundColor: '#FAD160',
   },
+  box4: {
+    backgroundColor: '#a1c45a',
+},
   boxTitle: {
     fontSize: 20,
     fontWeight: 'bold',
@@ -148,9 +163,11 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   iconText: {
-    fontSize: 16,
+    fontSize: 14,
     color: '#000',
     fontWeight: 'bold',
+    alignContent: 'center',
+    textAlign: 'center',
   },
   contactBox: {
     backgroundColor: '#C9E4E7',

@@ -105,7 +105,6 @@ export default function ProfileScreen({ navigation }) {
             };
             reader.readAsDataURL(response.data);
         } catch (error) {
-            console.error('Error fetching user avatar:', error);
             setAvatarUri('');
         }
     };

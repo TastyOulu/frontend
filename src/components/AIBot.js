@@ -1,11 +1,13 @@
-import React, { useState, useCallback, useEffect } from 'react';
-import { View, Text, StyleSheet, Modal } from 'react-native';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, Modal, Dimensions } from 'react-native';
 import { FAB } from 'react-native-paper';
 import { useTranslation } from 'react-i18next';
 import axios from 'axios';
 import Constants from 'expo-constants';
 import { GiftedChat } from 'react-native-gifted-chat';
 import * as SecureStore from "expo-secure-store";
+
+const { width, height } = Dimensions.get('window');
 
 export default function AIBot() {
     const { t } = useTranslation();
@@ -14,12 +16,14 @@ export default function AIBot() {
     const [isTyping, setIsTyping] = useState(false);
     const [username, setUsername] = useState('');
     const [avatarUri, setAvatarUri] = useState('');
+    const [error, setError] = useState(null);
+    const giftedChatRef = useRef(null);
 
     useEffect(() => {
         setMessages([
             {
                 _id: 1,
-                text: t('ui_chatbot.hey', "Hello! I'm your AI assistant. How can I help you today?"), // initial message
+                text: t('ui_chatbot_hey'),
                 createdAt: new Date(),
                 user: {
                     _id: 2,
@@ -74,12 +78,14 @@ export default function AIBot() {
             return response.data.response;
         } catch (error) {
             console.error('Error fetching AI response:', error);
-            return "I'm sorry, I can't help you with that right now.";
+            setError(t('ui_chatbot_error'));
+            return t('ui_chatbot_error');
         }
     };
 
     const openChat = useCallback(() => {
         setIsVisible(true);
+        fetchUserData();
     }, []);
 
     const closeChat = useCallback(() => {
@@ -100,7 +106,8 @@ export default function AIBot() {
                 animationType="slide"
                 onRequestClose={closeChat}
             >
-                <View style={{ flex: 1, width: "auto", paddingBottom: 100 }}>
+                <View style={styles.modalContainer}>
+                    <View style={styles.modalContent}>
                     <GiftedChat
                         messages={messages}
                         onSend={async (newMessages) => {
@@ -128,17 +135,30 @@ export default function AIBot() {
                         renderUsernameOnMessage={true}
                         renderAvatarOnTop={true}
                         showUserAvatar={true}
-                        alwaysShowSend={true}
+                        alwaysShowSend={false}
                         scrollToBottom={true}
-
+                        placeholder={t('ui_chatbot_placeholder')}
+                        minInputLength={1}
+                        extraData={error}
+                        renderChatFooter={() => error ? (
+                            <Text style={{ color: 'red', textAlign: 'center', marginVertical: 5 }}>{error}</Text> ) : null}
+                        isScrollToBottom={true}
+                        scrollToBottomComponent={() => (
+                            <FAB
+                                icon="arrow-down"
+                                style={styles.scrollToBottom}
+                                onPress={() => giftedChatRef.current.scrollToBottom()}
+                            />
+                        )}
                     />
-                </View>
                 <FAB
                     icon="close"
                     style={{ position: 'absolute', top: 16, right: 16 }}
                     onPress={closeChat}
                     //label={t('close')}
-                />
+                    />
+                    </View>
+                </View>
             </Modal>
         </View>
     );
@@ -149,6 +169,36 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: '#f5f5f5',
+    },
+    fab: {
+        position: 'absolute',
+        bottom: 16,
+        right: 16,
+    },
+    scrollToBottom: {
+        position: 'absolute',
+        right: 16,
+        bottom: 16,
+        backgroundColor: '#fff',
+    },
+    modalContainer: {
+        flex: 1,
+        justifyContent: 'flex-end',
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    },
+    modalContent: {
+        height: height * 0.8,
+        backgroundColor: '#fff',
+        borderTopLeftRadius: 20,
+        borderTopRightRadius: 20,
+        padding: 10,
+        paddingBottom: 50,
+    },
+    
+    closeButton: {
+        position: 'absolute',
+        top: 10,
+        right: 10,
+        backgroundColor: 'white',
     },
 });
