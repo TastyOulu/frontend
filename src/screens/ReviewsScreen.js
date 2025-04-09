@@ -24,6 +24,8 @@ const ReviewScreen = () => {
   const [fetchedRestaurants, setFetchedRestaurants] = useState([]);
   const [username, setUsername] = useState(null);
   const [isUserLoading, setIsUserLoading] = useState(true);
+  const [selectedRestaurantId, setSelectedRestaurantId] = useState(null);
+
 
   const GOOGLE_PLACES_API_KEY = Constants.expoConfig?.extra?.googlePlacesApiKey;
   const REACT_APP_API_URL = Constants.expoConfig?.extra?.REACT_APP_API_URL;
@@ -47,40 +49,71 @@ const ReviewScreen = () => {
   }, []);
 
   useEffect(() => {
-    const fetchReviews = async () => {
-      try {
-        const token = await SecureStore.getItemAsync('userToken');
-        if (!token) return;
-        const response = await axios.get(`${REACT_APP_API_URL}/reviews`, {
-          headers: { Authorization: `Bearer ${token}` },
-          validateStatus: status => status < 500
-        });
-        if (response.status === 404) {
-          setReviews([]);
-          return;
+      const fetchReviews = async () => {
+        try {
+          const token = await SecureStore.getItemAsync('userToken');
+    
+          const response = await axios.get(`${REACT_APP_API_URL}/reviews`, {
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+            validateStatus: status => status < 500,
+          });
+    
+          if (response.status === 404) {
+            setReviews([]);
+            return;
+          }
+    
+          const reviewsData = Array.isArray(response.data) ? response.data : [];
+    
+          const nameCache = new Map();
+    
+          const enrichedReviews = await Promise.all(
+            reviewsData.map(async r => {
+              let restaurantName = `Restaurant ID ${r.restaurantId}`;
+    
+              if (nameCache.has(r.restaurantId)) {
+                restaurantName = nameCache.get(r.restaurantId);
+              } else {
+                try {
+                  const detailsUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${r.restaurantId}&fields=name&key=${GOOGLE_PLACES_API_KEY}`;
+                  const res = await fetch(detailsUrl);
+                  const data = await res.json();
+    
+                  if (data?.result?.name) {
+                    restaurantName = data.result.name;
+                    nameCache.set(r.restaurantId, restaurantName);
+                  }
+                } catch (err) {
+                  console.warn('Google Places API error:', err);
+                }
+              }
+    
+              return {
+                id: r.reviewId?.toString() || Math.random().toString(),
+                restaurant: restaurantName,
+                review: r.review,
+                rating: r.grade || 0,
+                image: null,
+                username: `User ${r.userId || 'Unknown'}`,
+                date: new Date(r.createdAt).toLocaleString(),
+                upVotes: 0,
+                downVotes: 0,
+                userVote: null,
+              };
+            })
+          );
+    
+          setReviews(enrichedReviews);
+        } catch (error) {
+          console.error('Failed to fetch reviews:', error);
+          Alert.alert('Error', 'Unable to load reviews.');
         }
-        if (Array.isArray(response.data)) {
-          const mapped = response.data.map(r => ({
-            id: r.reviewId?.toString() || Math.random().toString(),
-            restaurant: `Restaurant ID ${r.restaurantId}`,
-            review: r.review,
-            rating: 0,
-            image: null,
-            username: 'User',
-            date: new Date(r.createdAt).toLocaleString(),
-            upVotes: 0,
-            downVotes: 0,
-            userVote: null,
-          }));
-          setReviews(mapped);
-        }
-      } catch (error) {
-        console.error('Failed to fetch reviews:', error);
-        Alert.alert('Error', 'Unable to load reviews.');
-      }
-    };
-    fetchReviews();
-  }, []);
+      };
+    
+      fetchReviews();
+    }, []);
+    
+    
 
   useEffect(() => {
     if (restaurant) fetchRestaurants(restaurant);
@@ -111,10 +144,12 @@ const ReviewScreen = () => {
       alert(t('ui_loading_user_info'));
       return;
     }
+  
     if (!username || username === 'Anonymous') {
       Alert.alert('Authentication Required', 'Please log in first to submit reviews.');
       return;
     }
+  
     if (restaurant && review && rating) {
       try {
         const token = await SecureStore.getItemAsync('userToken');
@@ -122,9 +157,16 @@ const ReviewScreen = () => {
           Alert.alert('Error', 'Authentication token missing.');
           return;
         }
+  
+        const restaurantId = selectedRestaurantId || 'unknown-id';
+  
         const response = await axios.post(
           `${REACT_APP_API_URL}/review`,
-          { restaurantId: "1", review },
+          {
+            restaurantId,
+            review,
+            grade: rating,
+          },
           {
             headers: {
               'Content-Type': 'application/json',
@@ -132,10 +174,11 @@ const ReviewScreen = () => {
             },
           }
         );
+  
         const newReview = {
           ...response.data,
           id: Math.random().toString(),
-          restaurant,
+          restaurant: restaurant,
           review,
           rating,
           image,
@@ -145,11 +188,19 @@ const ReviewScreen = () => {
           downVotes: 0,
           userVote: null,
         };
+  
+        await SecureStore.setItemAsync(`review-meta-${newReview.id}`, JSON.stringify({
+          restaurant: restaurant,
+          username: username,
+        }));
+  
         setReviews([newReview, ...reviews]);
         setRestaurant('');
+        setSelectedRestaurantId(null);
         setReview('');
         setRating(0);
         setImage(null);
+  
         Alert.alert('Success', 'Review submitted successfully!');
       } catch (error) {
         console.error('Failed to submit review:', error);
@@ -159,7 +210,7 @@ const ReviewScreen = () => {
       Alert.alert('Missing Fields', 'Please fill in all fields.');
     }
   };
-
+  
   const openReview = r => {
     setSelectedReview(r);
     setModalVisible(true);
@@ -217,8 +268,13 @@ const ReviewScreen = () => {
                       {fetchedRestaurants.slice(0, 10).map(item => (
                         <TouchableOpacity
                           key={item.place_id}
-                          onPress={() => { setRestaurant(item.name); setFetchedRestaurants([]); }}
-                        >
+                          onPress={() => {
+                            setRestaurant(item.name);
+                            setSelectedRestaurantId(item.place_id); 
+                            setFetchedRestaurants([]);
+                          }}
+                          >
+                          
                           <View style={styles.listItem}>
                             <Text style={styles.listTitle}>{item.name}</Text>
                             <Text style={styles.listAddress}>{item.formatted_address}</Text>
