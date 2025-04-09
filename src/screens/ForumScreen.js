@@ -29,7 +29,12 @@ export default function ForumScreen({ navigation }) {
 
   const handleAddTopic = () => {
     if (newTopic.trim() !== "") {
-      setTopics([...topics, newTopic]);
+      const topic = {
+        title: newTopic,
+        user: CURRENT_USER,
+        createdAt: new Date().toLocaleString([], { dateStyle: 'short', timeStyle: 'short' }),
+      };
+      setTopics([...topics, topic]);
       setMessages({ ...messages, [newTopic]: [] });
       setNewTopic("");
       setModalVisible(false);
@@ -43,6 +48,7 @@ export default function ForumScreen({ navigation }) {
         user: CURRENT_USER,
         text: newMessage,
         likes: 0,
+        createdAt: new Date().toLocaleString([], { dateStyle: 'short', timeStyle: 'short' }),
       };
       updatedMessages[selectedTopic].push(newMsg);
       setMessages(updatedMessages);
@@ -76,6 +82,14 @@ export default function ForumScreen({ navigation }) {
               <Text style={styles.forumTitle}>FORUM</Text>
             </View>
 
+            <TouchableOpacity
+              style={styles.newTopicButton}
+              onPress={() => setModalVisible(true)}
+            >
+              <Ionicons name="add-circle-outline" size={20} color="white" />
+              <Text style={styles.newTopicText}>Start a New Topic</Text>
+            </TouchableOpacity>
+
             <View style={styles.topicList}>
               {topics.map((topic, index) => (
                 <TouchableOpacity
@@ -84,20 +98,13 @@ export default function ForumScreen({ navigation }) {
                     styles.topicButton,
                     { backgroundColor: topicColors[index % topicColors.length] }
                   ]}
-                  onPress={() => setSelectedTopic(topic)}
+                  onPress={() => setSelectedTopic(topic.title)}
                 >
-                  <Text style={styles.topicText}>{topic}</Text>
+                  <Text style={styles.topicText}>{topic.title}</Text>
+                  <Text style={styles.topicMeta}>Created by {topic.user} at {topic.createdAt} | Comments: {(messages[topic.title] || []).length}</Text>
                 </TouchableOpacity>
               ))}
             </View>
-
-            <TouchableOpacity
-              style={styles.newTopicButton}
-              onPress={() => setModalVisible(true)}
-            >
-              <Ionicons name="add-circle-outline" size={20} color="white" />
-              <Text style={styles.newTopicText}>Start a New Topic</Text>
-            </TouchableOpacity>
 
             <Modal
               animationType="fade"
@@ -142,15 +149,16 @@ export default function ForumScreen({ navigation }) {
             </View>
 
             <ScrollView style={styles.messageList}>
-              {(messages[selectedTopic] || []).map((message, index) => (
+              {(messages[selectedTopic] || []).slice().reverse().map((message, index) => (
                 <View key={index} style={styles.messageBubble}>
                   <View style={styles.userRow}>
                     <Ionicons name="person-circle-outline" size={20} color="#fff" />
                     <Text style={styles.userName}>{message.user}</Text>
+                    <Text style={styles.messageTimestamp}>{message.createdAt}</Text>
                   </View>
                   <Text style={styles.messageText}>{message.text}</Text>
                   <View style={styles.likeRow}>
-                    <TouchableOpacity onPress={() => handleLikeMessage(index)}>
+                    <TouchableOpacity onPress={() => handleLikeMessage(messages[selectedTopic].length - 1 - index)}>
                       <Ionicons name="heart-outline" size={20} color="#fff" />
                     </TouchableOpacity>
                     <Text style={styles.likesCount}>{message.likes} likes</Text>
@@ -213,6 +221,12 @@ const styles = StyleSheet.create({
   topicText: {
     fontSize: 18,
     color: 'white',
+    textAlign: 'center',
+  },
+  topicMeta: {
+    color: 'rgba(255,255,255,0.8)',
+    fontSize: 12,
+    marginTop: 4,
     textAlign: 'center',
   },
   newTopicButton: {
@@ -305,12 +319,18 @@ const styles = StyleSheet.create({
   userRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: 5,
   },
   userName: {
     color: '#fff',
     marginLeft: 5,
     fontWeight: 'bold',
+  },
+  messageTimestamp: {
+    color: '#fff',
+    fontSize: 12,
+    marginLeft: 10,
   },
   messageText: {
     color: 'white',
