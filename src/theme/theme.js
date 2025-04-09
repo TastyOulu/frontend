@@ -2,28 +2,26 @@ import { DefaultTheme, DarkTheme } from '@react-navigation/native';
 
 export const MyLightTheme = {
   ...DefaultTheme,
-  dark: false,
+  light: true,
   colors: {
     ...DefaultTheme.colors,
-    primary: '#6200ee',
     background: '#ffffff',
-    card: '#f0f0f0',
+    card: '#ffffff',
     text: '#000000',
-    border: '#e0e0e0',
-    notification: '#ff80ab',
+    primary: '#0000FF', 
+    border: '#dddddd',
   },
 };
 
 export const MyDarkTheme = {
   ...DarkTheme,
-  dark: true,
+  light: false,
   colors: {
     ...DarkTheme.colors,
-    primary: '#bb86fc',
-    background: '#121212',
-    card: '#1f1f1f',
+    background: '#000000',
+    card: '#121212',
     text: '#ffffff',
-    border: '#272727',
-    notification: '#ff80ab',
+    primary: '#1e90ff',
+    border: '#444444',
   },
 };
