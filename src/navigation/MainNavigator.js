@@ -97,10 +97,7 @@ const DrawerNavigator = () => {
         headerShown: true,
         headerTintColor: colors.text,
         drawerPosition: "right",
-        //statusBarColor: 'red',
-        //statusBarStyle: 'dark',
         drawerActiveBackgroundColor: colors.border,
-        //drawerInactiveBackgroundColor: 'transparent',
         drawerActiveTintColor: colors.primary,
         drawerInactiveTintColor: colors.text,
         drawerLabelStyle: {
@@ -108,9 +105,7 @@ const DrawerNavigator = () => {
         
         },
         headerStyle: {
-          backgroundColor: '#E6CCFF',
-          //elevation: 0,
-
+          backgroundColor: '#fff',
           borderBottomWidth: 0,
         },
         headerTitle: () => <Image source={Component} style={{ width: 150, height: 60, resizeMode: 'contain', marginTop: Platform.OS === 'ios' ? 0:20, }} />,
@@ -184,16 +179,7 @@ const DrawerNavigator = () => {
             ),
           }}
         />
-        <Drawer.Screen
-          name="languages"
-          component={LanguageSwitcher}
-          options={{
-            title: 'Language',
-            drawerIcon: ({ color }) => (
-              <Ionicons name="language-outline" size={22} color={color} />
-            ),
-          }}
-        />
+       
         <Drawer.Screen
           name="DummyLogin"
           options={{
