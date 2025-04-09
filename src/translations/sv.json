@@ -70,6 +70,7 @@
     "ui_signup_success": "Registrering lyckades! Omdirigerar till inloggning...",
     "ui_signup_failed": "Registrering misslyckades. Försök igen.",
     "ui_email": "E-post",
+    "ui_username": "Användarnamn",
     "ui_create_account": "Skapa konto",
     "ui_confirm_password": "Bekräfta lösenord",
     "ui_signup_button": "Registrera dig",
