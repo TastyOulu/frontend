@@ -6,6 +6,7 @@ import { StatusBar, setStatusBarStyle } from 'expo-status-bar';
 import { AuthProvider } from './src/contexts/AuthContext';
 import { useColorScheme } from 'react-native';
 import { MyLightTheme, MyDarkTheme } from './src/theme/theme';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function App() {
   const systemScheme = useColorScheme();

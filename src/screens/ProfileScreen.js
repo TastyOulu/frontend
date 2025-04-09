@@ -324,13 +324,15 @@ export default function ProfileScreen({ navigation }) {
                                 <View style={{alignItems:'center',marginTop: 20,marginBottom: 80}}>
                                     <Pressable
                                         style={{backgroundColor: '#6200EA',alignItems:'center',width:300,borderRadius:30,paddingVertical: 12,
-                                            paddingHorizontal: 32,marginTop: 20}}
+                                            paddingHorizontal: 32,marginTop: 20,shadowColor: 'black',shadowOffset: { width: 0, height: 2 },
+                                            shadowOpacity: 0.25,shadowRadius: 3.84,elevation: 10,}}
                                         onPress={() => setUsernameModalVisible(true)}>
                                         <Text style={{color:'white',fontSize:18}}>Change username</Text>
                                     </Pressable>
                                     <Pressable
                                         style={{backgroundColor: '#6200EA',alignItems:'center',width:300,borderRadius:30,paddingVertical: 12,
-                                            paddingHorizontal: 32,marginTop: 20}}
+                                            paddingHorizontal: 32,marginTop: 20,shadowColor: 'black',shadowOffset: { width: 0, height: 2 },
+                                            shadowOpacity: 0.25,shadowRadius: 3.84,elevation: 10,}}
                                         onPress={() => setPasswordModalVisible(true)}>
                                         <Text style={{color:'white',fontSize:18}}>Change password</Text>
                                     </Pressable>

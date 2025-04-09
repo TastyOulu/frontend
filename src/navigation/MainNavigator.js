@@ -3,9 +3,11 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { createDrawerNavigator } from '@react-navigation/drawer';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
-import { TouchableOpacity, Image, StatusBar } from 'react-native';
-import { DrawerActions, useNavigation, CommonActions, useTheme } from '@react-navigation/native';
-
+import { TouchableOpacity, Image,View,StyleSheet, Platform,StatusBar } from 'react-native';
+import { DrawerActions, useNavigation } from '@react-navigation/native';
+import { CommonActions } from '@react-navigation/native'
+import { useTheme } from '@react-navigation/native';
+import { DrawerContentScrollView, DrawerItemList } from '@react-navigation/drawer';
 import HomeScreen from '../screens/HomeScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import ForumScreen from '../screens/ForumScreen';
@@ -68,62 +70,84 @@ const DrawerNavigator = () => {
 
   return (
     <>
-      <StatusBar
+     <StatusBar
         barStyle={dark ? 'light-content' : 'dark-content'}
         backgroundColor={colors.card}
         animated={true}
       />
-      <Drawer.Navigator
-        drawerType="slide"
-        screenOptions={({ navigation }) => ({
-          headerShown: true,
-          headerTintColor: colors.text,
-          drawerPosition: 'right',
-          drawerActiveBackgroundColor: colors.border,
-          drawerActiveTintColor: colors.primary,
-          drawerInactiveTintColor: colors.text,
-          drawerLabelStyle: {
-            fontSize: 18,
-          },
-          headerStyle: {
-            backgroundColor: colors.card,
-            borderBottomWidth: 0,
-            elevation: 0,
-          },
-          headerTitle: () => (
-            <Image
-              source={Component}
-              style={{ width: 120, height: 40, resizeMode: 'contain' }}
-            />
-          ),
-          headerTitleAlign: 'center',
-          headerLeft: () =>
-            navigation.canGoBack() ? (
-              <TouchableOpacity
-                onPress={() => navigation.goBack()}
-                style={{ marginLeft: 15, padding: 8 }}
-              >
-                <Ionicons name="arrow-back" size={24} color={colors.text} />
-              </TouchableOpacity>
-            ) : null,
-          headerRight: () => (
-            <TouchableOpacity
-              onPress={() => navigation.dispatch(DrawerActions.toggleDrawer())}
-              style={{ marginRight: 15, padding: 8 }}
+    <Drawer.Navigator
+        drawerContent={(props) => (
+            <DrawerContentScrollView
+            {...props}
+            contentContainerStyle={{ flex: 1, justifyContent: 'space-between' }}
             >
-              <Ionicons name="menu" size={24} color={colors.text} />
-            </TouchableOpacity>
-          ),
-        })}
-      >
-        <Drawer.Screen
-          name="Main"
-          component={TabNavigator}
-          options={{
-            title: 'Home',
-            drawerIcon: ({ color }) => <Ionicons name="home-outline" size={22} color={color} />,
-          }}
-          listeners={({ navigation }) => ({
+            {/* Yläosa: DrawerItemList renderöidään normaalisti */}
+            <View>
+                <DrawerItemList {...props} />
+            </View>
+
+            {/* Alareuna: LanguageSwitcher näkyviin */}
+            <View style={styles.languageContainer}>
+                <LanguageSwitcher />
+            </View>
+            </DrawerContentScrollView>
+        )}
+      drawerType="slide"
+      screenOptions={({ navigation }) => ({
+        headerShown: true,
+        headerTintColor: colors.text,
+        drawerPosition: "right",
+        //statusBarColor: 'red',
+        //statusBarStyle: 'dark',
+        drawerActiveBackgroundColor: colors.border,
+        //drawerInactiveBackgroundColor: 'transparent',
+        drawerActiveTintColor: colors.primary,
+        drawerInactiveTintColor: colors.text,
+        drawerLabelStyle: {
+          fontSize: 20,
+        
+        },
+        headerStyle: {
+          backgroundColor: '#E6CCFF',
+          //elevation: 0,
+
+          borderBottomWidth: 0,
+        },
+        headerTitle: () => <Image source={Component} style={{ width: 150, height: 60, resizeMode: 'contain', marginTop: Platform.OS === 'ios' ? 0:20, }} />,
+        headerLeft: () => {
+            if (navigation.canGoBack()) {
+                return (
+                    <TouchableOpacity
+                        onPress={() => navigation.goBack()}
+                        style={{ marginLeft: 15, padding: 8 }}
+                    >
+                        <Ionicons name="arrow-back" size={24} color="black" />
+                    </TouchableOpacity>
+                );
+            }
+            return null;
+        },
+        headerTitleAlign: 'center',
+        headerRight: () => (
+          <TouchableOpacity
+            onPress={() => navigation.dispatch(DrawerActions.toggleDrawer())}
+            style={{ marginRight: 15, padding: 8 }}
+          >
+            <Ionicons name="menu" size={24} color="black" />
+          </TouchableOpacity>
+        ),
+      })}
+    >
+      <Drawer.Screen
+        name="Main"
+        component={TabNavigator}
+        options={{
+          title: 'Home',
+          drawerIcon: ({ color }) => (
+          <Ionicons name="home-outline" size={22} color={color} />
+            ),
+        }}
+        listeners={({ navigation }) => ({
             drawerItemPress: (e) => {
               e.preventDefault();
               navigation.dispatch(
@@ -209,5 +233,21 @@ const MainNavigator = () => {
     </>
   );
 };
+
+const styles = StyleSheet.create({
+    languageContainer: {
+        padding: 10,
+        borderTopWidth: 1,
+        borderColor: '#ccc',
+        justifyContent: 'center',
+        alignItems: 'center',
+      },
+    container: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    
+    })
 
 export default MainNavigator;

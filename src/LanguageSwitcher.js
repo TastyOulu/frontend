@@ -59,7 +59,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#9859FC',
   },
   buttonText: {
-    fontSize: 14,
+    fontSize: 18,
     fontWeight: 'bold',
     color: '#333',
   },
