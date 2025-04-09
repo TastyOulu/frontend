@@ -80,7 +80,7 @@ export default function LoginScreen({ navigation }) {
     };
 
     return (
-        <GradientBackground>
+        <GradientBackground statusBarStyle="dark">
             <KeyboardAvoidingView
                 behavior={Platform.OS === "ios" ? "padding" : "height"}
                 style={styles.container}

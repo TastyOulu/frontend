@@ -41,7 +41,7 @@ export default function InfoScreen() {
   const { t } = useTranslation();
 
   return (
-    <GradientBackground>
+    <GradientBackground statusBarStyle="dark">
       <View style={styles.header}>
         <Image source={faqImage} style={{ width: 305, height: 159, resizeMode: 'contain' }} />
       </View>

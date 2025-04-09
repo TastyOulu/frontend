@@ -57,7 +57,7 @@ export default function ForumScreen({ navigation }) {
   };
 
   return (
-    <GradientBackground>
+    <GradientBackground statusBarStyle="dark">
       <StatusBar barStyle="light-content" />
       <KeyboardAvoidingView
         style={{ flex: 1 }}
