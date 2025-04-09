@@ -1,4 +1,4 @@
-import React, { useContext, useEffect,useState } from "react";
+import React, { useContext, useEffect,useState, useCallback } from "react";
 import {View, Text, StyleSheet,Pressable,Image,Modal} from "react-native";
 import {TextInput} from "react-native-paper";
 import * as ImagePicker from 'expo-image-picker'
@@ -20,22 +20,42 @@ export default function ProfileScreen({ navigation }) {
     const [createdAt, setCreatedAt] = useState('')
     const [showSettings, setShowSettings] = useState(false)
     const [isCheckingAuth, setIsCheckingAuth] = useState(true);
-
-
     const [isUsernameModalVisible, setUsernameModalVisible] = useState(false);
     const [isPasswordModalVisible, setPasswordModalVisible] = useState(false);
     const [newUsername, setNewUsername] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [oldPassword, setOldPassword] = useState('');
-
     const [showPassword, setShowPassword] = useState(false);
+
     const toggleShowPassword = () => setShowPassword(!showPassword);
-
-    const { user,setUser, logout, deleteAccount } = useContext(AuthContext);
-
+    const { user, setUser, logout, deleteAccount } = useContext(AuthContext);
     const REACT_APP_API_URL = Constants.expoConfig?.extra?.REACT_APP_API_URL;
 
-    const fetchUserData = async () => {
+    const fetchUserAvatar = useCallback(async () => {
+        try {
+            const token = await SecureStore.getItemAsync('userToken');
+            if (!token) {
+                console.log("No token found when fetching avatar.");
+                return;
+            }
+
+            const response = await axios.get(`${REACT_APP_API_URL}/user/avatar`, {
+                headers: { Authorization: `Bearer ${token}` },
+                responseType: 'blob',
+            });
+
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setAvatarUri(reader.result);
+            };
+            reader.readAsDataURL(response.data);
+        } catch (error) {
+            console.error("Error fetching avatar:", error);
+            setAvatarUri('');
+        }
+    }, [REACT_APP_API_URL]);
+
+    const fetchUserData = useCallback(async () => {
         try {
             const token = await SecureStore.getItemAsync('userToken');
             if (!token) {
@@ -48,32 +68,32 @@ export default function ProfileScreen({ navigation }) {
                 setIsCheckingAuth(false);
                 return;
             }
-    
+
             const response = await axios.get(`${REACT_APP_API_URL}/user/info`, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                 },
             });
-    
+
             const name = response.data?.username;
             const email = response.data?.email;
             const rawDate = response.data?.createdAt;
             const createdAt = rawDate ? new Date(rawDate).toLocaleDateString('fi-FI') : 'Not found';
-            const avatar = response.data?.avatar;
-    
+            let avatar = response.data?.avatar;
+
             if (name && email) {
                 setUsername(name);
                 setEmail(email);
                 setCreatedAt(createdAt);
-    
+
                 if (avatar === 'ok') {
-                    setAvatarUri(`${REACT_APP_API_URL}/user/avatar`);
+                    await fetchUserAvatar();
                 } else if (avatar) {
                     setAvatarUri(avatar);
                 } else {
                     setAvatarUri(`https://api.dicebear.com/7.x/pixel-art/png?seed=${name}`);
+                    avatar = `https://api.dicebear.com/7.x/pixel-art/png?seed=${name}`
                 }
-    
                 setAvatarSeed(name);
                 setUser(response.data);
             }
@@ -87,56 +107,30 @@ export default function ProfileScreen({ navigation }) {
         } finally {
             setIsCheckingAuth(false);
         }
-    };
-    
-    const fetchUserAvatar = async () => {
-        try {
-            const token = await SecureStore.getItemAsync('userToken');
-            if (!token) throw new Error('No token found');
-    
-            const response = await axios.get(`${REACT_APP_API_URL}/user/avatar`, {
-                headers: { Authorization: `Bearer ${token}` },
-                responseType: 'blob',
-            });
-
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setAvatarUri(reader.result); 
-            };
-            reader.readAsDataURL(response.data);
-        } catch (error) {
-            setAvatarUri('');
-        }
-    };
+    }, [REACT_APP_API_URL, fetchUserAvatar, setUser]);
 
     useEffect(() => {
         fetchUserData();
-    }, []);
-    
-    useEffect(() => {
-        if (!avatarUri) {
-            fetchUserAvatar();
-        }
-    }, [avatarUri]);
+    }, [fetchUserData]);
 
     useEffect(() => {
         generateRandomSeed();
     }, []);
-    
+
     useEffect(() => {
         if (!isCheckingAuth && !user) {
             navigation.reset({
                 index: 0,
                 routes: [{ name: 'Login' }],
             });
-        } 
-    }, [user,isCheckingAuth]);
+        }
+    }, [user, isCheckingAuth, navigation]);
 
     const generateRandomSeed = () => {
         const newSeed = Math.random().toString(36).substring(2, 10);
         setAvatarSeed(newSeed);
     };
-    
+
     const avatarUrl = avatarUri || `https://api.dicebear.com/7.x/pixel-art/png?seed=${avatarSeed}`;
 
     const pickImage = async () => {
@@ -156,7 +150,7 @@ export default function ProfileScreen({ navigation }) {
         if (!result.canceled) {
             const selectedImage = result.assets[0].uri;
             setAvatarUri(selectedImage);
-        
+
             const token = await SecureStore.getItemAsync('userToken');
             const formData = new FormData();
             formData.append('file', {
@@ -171,14 +165,13 @@ export default function ProfileScreen({ navigation }) {
                         Authorization: `Bearer ${token}`,
                         'Content-Type': 'multipart/form-data',
                     },
-                });                
+                });
                 Alert.alert("Success", "Avatar updated successfully");
-                fetchUserData();
+                await fetchUserData();
             } catch (error) {
                 Alert.alert("Error", "Failed to update avatar");
                 console.error("Failed to update avatar:", error);
             }
-            
         }
     };
 
@@ -224,7 +217,7 @@ export default function ProfileScreen({ navigation }) {
                             navigation.reset({
                                 index: 0,
                                 routes: [{ name: 'DrawerRoot' }],
-                              });
+                            });
                         } catch (error) {
                             Alert.alert("Error", "Failed to delete account.")
                             console.error("Failed to delete account:", error)

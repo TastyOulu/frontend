@@ -64,12 +64,11 @@
   "login_success": "Login successful",
   "login_required_fields": "All fields are required",
 
-
-
 "// SignupScreen": "",
 "ui_create_account": "Create Account",
 "ui_confirm_password": "Confirm Password",
 "ui_signup_button": "Sign Up",
+"ui_username": "Username",
 "ui_have_account": "Already have an account?",
 "ui_signin": "Sign In",
 "ui_invalid_email": "Invalid email address",

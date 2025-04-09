@@ -70,6 +70,7 @@
   "ui_signup_button": "Rekisteröidy",
   "ui_have_account": "Onko sinulla jo tili?",
   "ui_signin": "Kirjaudu sisään",
+  "ui_username": "Käyttäjätunnus",
   "ui_invalid_email": "Virheellinen sähköpostiosoite",
   "ui_invalid_username": "Virheellinen käyttäjätunnus",
   "ui_invalid_password": "Virheellinen salasana",

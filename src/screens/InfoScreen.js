@@ -22,15 +22,15 @@ const IconRow = () => {
   return (
     <View style={styles.iconRow}>
       <View style={styles.iconWithText}>
-        <Ionicons name='star' size={22} color='black' style={styles.icon} />
+        <Ionicons name='star' size={24} color='black' style={styles.icon} />
         <Text style={styles.iconText}>{t('ui_30_points')}</Text>
       </View>
       <View style={styles.iconWithText}>
-        <Ionicons name='trophy' size={22} color='black' style={styles.icon} />
+        <Ionicons name='trophy' size={24} color='black' style={styles.icon} />
         <Text style={styles.iconText}>{t('ui_60_points')}</Text>
       </View>
       <View style={styles.iconWithText}>
-        <Ionicons name='diamond' size={22} color='black' style={styles.icon} />
+        <Ionicons name='diamond' size={24} color='black' style={styles.icon} />
         <Text style={styles.iconText}>{t('ui_100_points')}</Text>
       </View>
     </View>
@@ -148,18 +148,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   iconRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: 'column',
     width: '100%',
     paddingTop: 10,
-    paddingBottom: 10,
+    alignItems: 'center',
   },
   iconWithText: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginRight: 20,
+    paddingBottom: 5,
   },
   icon: {
+    marginBottom: 5,
     marginRight: 10,
   },
   iconText: {
