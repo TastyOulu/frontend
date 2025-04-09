@@ -12,7 +12,7 @@ const ads = [
     { text: 'Ravintola 5' },
 ];
 
-const AdCarousel = () => {
+const Top5Carousel = () => {
   return (
     <Carousel
       loop
@@ -60,5 +60,5 @@ const styles = StyleSheet.create({
   },
 });
 
-export default AdCarousel;
+export default Top5Carousel;
 

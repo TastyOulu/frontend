@@ -6,6 +6,7 @@ import { StatusBar } from 'expo-status-bar'
 import { AuthProvider } from './src/contexts/AuthContext';
 import {useColorScheme } from 'react-native';
 import { MyLightTheme, MyDarkTheme } from './src/theme/theme';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 
 
@@ -14,6 +15,7 @@ export default function App() {
 	const theme = systemScheme === 'dark' ? MyDarkTheme : MyLightTheme;
     return (
         <AuthProvider>
+			
 			<StatusBar 
 				style={theme.light ? 'dark' : 'light'}
 				backgroundColor={theme.colors.card} 
@@ -22,6 +24,7 @@ export default function App() {
             <NavigationContainer theme={theme}>
                 <MainNavigator />
             </NavigationContainer>
+			
         </AuthProvider>
 		
     );

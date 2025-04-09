@@ -73,11 +73,11 @@ export default function SignupScreen({ navigation }) {
                 style={styles.container}
             >
                 <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', alignItems: 'center' }}>
-                <View style={{ flex: 1, paddingTop: 50, paddingHorizontal: 20 }}>
+                <View style={{position: 'absolute', top: 40, left: 10 }}>
                         {/* Custom back arrow */}
                         <TouchableOpacity
                             onPress={() => navigation.goBack()}
-                            style={{ position: 'absolute', top: 40, left: 20 }}
+                            
                         >
                             <Ionicons name="arrow-back" size={28} color="black" />
                         </TouchableOpacity>

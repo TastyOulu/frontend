@@ -3,10 +3,11 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { createDrawerNavigator } from '@react-navigation/drawer';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
-import { TouchableOpacity, Image } from 'react-native';
+import { TouchableOpacity, Image,View,StyleSheet, Platform } from 'react-native';
 import { DrawerActions, useNavigation } from '@react-navigation/native';
 import { CommonActions } from '@react-navigation/native'
 import { useTheme } from '@react-navigation/native';
+import { DrawerContentScrollView, DrawerItemList } from '@react-navigation/drawer';
 
 
 
@@ -88,6 +89,22 @@ const DrawerNavigator = () => {
     <>
     
     <Drawer.Navigator
+        drawerContent={(props) => (
+            <DrawerContentScrollView
+            {...props}
+            contentContainerStyle={{ flex: 1, justifyContent: 'space-between' }}
+            >
+            {/* Yläosa: DrawerItemList renderöidään normaalisti */}
+            <View>
+                <DrawerItemList {...props} />
+            </View>
+
+            {/* Alareuna: LanguageSwitcher näkyviin */}
+            <View style={styles.languageContainer}>
+                <LanguageSwitcher />
+            </View>
+            </DrawerContentScrollView>
+        )}
       drawerType="slide"
       screenOptions={({ navigation }) => ({
         headerShown: true,
@@ -106,9 +123,10 @@ const DrawerNavigator = () => {
         headerStyle: {
           backgroundColor: '#E6CCFF',
           //elevation: 0,
+
           borderBottomWidth: 0,
         },
-        headerTitle: () => <Image source={Component} style={{ width: 150, height: 60, resizeMode: 'contain', marginTop: 20 }} />,
+        headerTitle: () => <Image source={Component} style={{ width: 150, height: 60, resizeMode: 'contain', marginTop: Platform.OS === 'ios' ? 0:20, }} />,
         headerLeft: () => {
             if (navigation.canGoBack()) {
                 return (
@@ -226,14 +244,8 @@ const DrawerNavigator = () => {
           drawerIcon: ({ color }) => <Ionicons name="search" size={22} color={color} />,
         }}
       />*/}
-      <Drawer.Screen
-        name="languages"
-        component={LanguageSwitcher}
-        options={{
-          title: 'Languages',
-          drawerIcon: ({ color }) => <Ionicons name="language" size={22} color={color} />,
-        }}
-        />
+      
+        
     </Drawer.Navigator>
     </>
   );
@@ -252,5 +264,21 @@ const MainNavigator = () => {
   </Stack.Navigator>
     );
 };
+
+const styles = StyleSheet.create({
+    languageContainer: {
+        padding: 10,
+        borderTopWidth: 1,
+        borderColor: '#ccc',
+        justifyContent: 'center',
+        alignItems: 'center',
+      },
+    container: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    
+    })
 
 export default MainNavigator;

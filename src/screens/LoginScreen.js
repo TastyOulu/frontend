@@ -94,7 +94,7 @@ export default function LoginScreen({ navigation }) {
                         paddingBottom: 20,
                     }}
                 >
-                    <View style={{ flex: 1, paddingTop: 50, paddingHorizontal: 20 }}>
+                    <View style={{ position: 'absolute', top: 40, left: 10 }}>
                         {/* Custom back arrow */}
                         <TouchableOpacity
                             onPress={() =>{
@@ -121,12 +121,12 @@ export default function LoginScreen({ navigation }) {
                                   })
                                 );
                               }}
-                              style={{ position: 'absolute', top: 40, left: 20 }}
+                              //style={{ position: 'absolute', top: 40, left: 20 }}
                             >
                               <Ionicons name="arrow-back" size={28} color="black" />
                             </TouchableOpacity>
                     </View>
-                    <View style={{ marginTop: 40 }}>
+                    <View style={{ marginTop: '20%' }}>
                         <Image source={Component} style={{ width: 305, height: 159, resizeMode: 'contain' }} />
                     </View>
 
