@@ -1,5 +1,6 @@
 import React, {useContext, useState} from 'react';
-import { View, Text, StyleSheet, Image, Pressable, KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator } from "react-native";
+import { View, Text, StyleSheet, Image, Pressable, KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator,TouchableOpacity } from "react-native";
+import { Ionicons } from '@expo/vector-icons';
 import { TextInput } from 'react-native-paper';
 import Component from '../../assets/Component 3.png';
 import PasswordInput from '../components/PasswordInput';
@@ -72,6 +73,15 @@ export default function SignupScreen({ navigation }) {
                 style={styles.container}
             >
                 <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', alignItems: 'center' }}>
+                <View style={{ flex: 1, paddingTop: 50, paddingHorizontal: 20 }}>
+                        {/* Custom back arrow */}
+                        <TouchableOpacity
+                            onPress={() => navigation.goBack()}
+                            style={{ position: 'absolute', top: 40, left: 20 }}
+                        >
+                            <Ionicons name="arrow-back" size={28} color="black" />
+                        </TouchableOpacity>
+                    </View>
                     <View style={{ marginTop: 40 }}>
                         <Image source={Component} style={{ width: 305, height: 159, resizeMode: 'contain' }} />
                     </View>

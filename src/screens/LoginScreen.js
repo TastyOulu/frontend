@@ -1,6 +1,8 @@
 import React, { useState, useContext } from 'react';
-import { View, Text, ScrollView, StyleSheet, Image, KeyboardAvoidingView, Platform, Pressable } from 'react-native';
-import { TextInput } from 'react-native-paper';
+import { View, Text, ScrollView, StyleSheet, Image, KeyboardAvoidingView, Platform, Pressable,TouchableOpacity } from 'react-native';
+import { TextInput} from 'react-native-paper';
+import { Ionicons } from '@expo/vector-icons'
+import { CommonActions } from '@react-navigation/native';
 import GradientBackground from '../components/GradientBackground';
 import PasswordInput from '../components/PasswordInput';
 import { AuthContext } from '../contexts/AuthContext';
@@ -43,10 +45,28 @@ export default function LoginScreen({ navigation }) {
 
             setTimeout(() => {
                 setMessage({ error: '', success: '' });
-                navigation.reset({
-                    index: 0,
-                    routes: [{ name: 'Main' }],
-                });
+                navigation.dispatch(
+                    CommonActions.reset({
+                      index: 0,
+                      routes: [
+                        {
+                          name: 'DrawerRoot',
+                          state: {
+                            index: 0,
+                            routes: [
+                              {
+                                name: 'Main',
+                                state: {
+                                  index: 0,
+                                  routes: [{ name: 'HomeTab' }],
+                                },
+                              },
+                            ],
+                          },
+                        },
+                      ],
+                    })
+                  );
             }, 2000);
 
             setFormData({ email: '', password: '' });
@@ -74,6 +94,38 @@ export default function LoginScreen({ navigation }) {
                         paddingBottom: 20,
                     }}
                 >
+                    <View style={{ flex: 1, paddingTop: 50, paddingHorizontal: 20 }}>
+                        {/* Custom back arrow */}
+                        <TouchableOpacity
+                            onPress={() =>{
+                                navigation.dispatch(
+                                  CommonActions.reset({
+                                    index: 0,
+                                    routes: [
+                                      {
+                                        name: 'DrawerRoot',
+                                        state: {
+                                          index: 0,
+                                          routes: [
+                                            {
+                                              name: 'Main',
+                                              state: {
+                                                index: 0,
+                                                routes: [{ name: 'HomeTab' }],
+                                              },
+                                            },
+                                          ],
+                                        },
+                                      },
+                                    ],
+                                  })
+                                );
+                              }}
+                              style={{ position: 'absolute', top: 40, left: 20 }}
+                            >
+                              <Ionicons name="arrow-back" size={28} color="black" />
+                            </TouchableOpacity>
+                    </View>
                     <View style={{ marginTop: 40 }}>
                         <Image source={Component} style={{ width: 305, height: 159, resizeMode: 'contain' }} />
                     </View>
@@ -114,7 +166,7 @@ export default function LoginScreen({ navigation }) {
                     {message.success ? <Text style={{ color: 'green' }}>{message.success}</Text> : null}
 
                     {/* Sign Up Link */}
-                    <Pressable onPress={() => navigation.navigate('Signup')}>
+                    <Pressable onPress={() => navigation.push('Signup')}>
                         <Text style={{ fontSize: 18, paddingBottom: 10 }}>
                             {t('login_no_account')}
                             <Text style={{ color: 'purple', textDecorationLine: 'underline' }}> {t('login_signup_link')}</Text>

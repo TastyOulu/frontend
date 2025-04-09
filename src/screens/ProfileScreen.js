@@ -11,6 +11,7 @@ import { AuthContext } from "../contexts/AuthContext";
 import Constants from 'expo-constants';
 import { ScrollView } from "react-native-gesture-handler";
 import PasswordInput  from "../components/PasswordInput";
+import { CommonActions } from "@react-navigation/native";
 
 export default function ProfileScreen({ navigation }) {
     const [avatarUri, setAvatarUri] = useState('')
@@ -78,7 +79,7 @@ export default function ProfileScreen({ navigation }) {
                 setUser(response.data);
             }
         } catch (error) {
-            console.error('Error fetching user data:', error);
+            
             setUsername('Anonymous');
             setEmail('Not found');
             setCreatedAt('Not found');
@@ -195,16 +196,36 @@ export default function ProfileScreen({ navigation }) {
                     text: "Log Out",
                     onPress: async () => {
                         await logout();
-                        navigation.reset({
-                            index: 0,
-                            routes: [{ name: 'DrawerRoot' }],
-                        });
-                    },
-                },
-            ],
-        );
-    };
+                        navigation.dispatch(
+                            CommonActions.reset({
+                              index: 0,
+                              routes: [
+                                {
+                                  name: 'DrawerRoot',
+                                  state: {
+                                    index: 0,
+                                    routes: [
+                                      {
+                                        name: 'Main',
+                                        state: {
+                                          index: 0,
+                                          routes: [{ name: 'HomeTab' }],
+                                        },
+                                      },
+                                    ],
+                                  },
+                                },
+                              ],
+                            })
+                          );
+                        },
+                      },
+                    ],
+                  );
+                };
+                    
 
+                
     const handleDeleteAccount = async () => {
         Alert.alert(
             "Delete Account",

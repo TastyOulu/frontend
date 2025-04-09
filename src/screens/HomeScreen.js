@@ -17,10 +17,10 @@ export default function HomeScreen({ navigation }) {
     <GradientBackground>
       <ScrollView>
         <View style={styles.container}>
-          <View style={{ backgroundColor: 'white', width: '100%', alignItems: 'center', justifyContent: 'center' }}>
+          {/*<View style={{ backgroundColor: 'white', width: '100%', alignItems: 'center', justifyContent: 'center' }}>
             <Image source={Component} style={{ width: 305, height: 159, resizeMode: 'contain', marginTop: 20 }} />
             <Text style={{ fontSize: 18, fontStyle: 'italic', padding: 10 }}>{t('ui_slogan')}</Text>
-          </View>
+          </View>*/}
 
           <View style={{ marginTop: 40 }}>
             <Pressable onPress={() => navigation.navigate('Info')}>

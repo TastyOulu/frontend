@@ -3,8 +3,12 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { createDrawerNavigator } from '@react-navigation/drawer';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
-import { TouchableOpacity } from 'react-native';
+import { TouchableOpacity, Image } from 'react-native';
 import { DrawerActions, useNavigation } from '@react-navigation/native';
+import { CommonActions } from '@react-navigation/native'
+import { useTheme } from '@react-navigation/native';
+
+
 
 import HomeScreen from '../screens/HomeScreen';
 import ProfileScreen from '../screens/ProfileScreen';
@@ -17,12 +21,15 @@ import SignupScreen from '../screens/SignupScreen';
 import LanguageSwitcher from '../LanguageSwitcher';
 import ForgotPassword from '../screens/ForgotPassword';
 
+const Component = require('../../assets/Component 3.png');
+
 const Stack = createStackNavigator();
 const Drawer = createDrawerNavigator();
 const Tab = createBottomTabNavigator();
 
 const DrawerMenuButton = () => {
   const navigation = useNavigation();
+  
   return (
     <TouchableOpacity
       onPress={() => navigation.dispatch(DrawerActions.toggleDrawer())}
@@ -75,26 +82,33 @@ const TabNavigator = () => (
 
 // Drawer
 const DrawerNavigator = () => {
+
+    const { dark,colors } = useTheme();
   return (
+    <>
+    
     <Drawer.Navigator
       drawerType="slide"
       screenOptions={({ navigation }) => ({
         headerShown: true,
+        headerTintColor: colors.text,
         drawerPosition: "right",
-        statusBarColor: 'red',
-        statusBarStyle: 'dark',
-        drawerActiveBackgroundColor: 'lightblue',
-        drawerInactiveBackgroundColor: 'transparent',
-        drawerActiveTintColor: '#fff',
-        drawerInactiveTintColor: '#333',
+        //statusBarColor: 'red',
+        //statusBarStyle: 'dark',
+        drawerActiveBackgroundColor: colors.border,
+        //drawerInactiveBackgroundColor: 'transparent',
+        drawerActiveTintColor: colors.primary,
+        drawerInactiveTintColor: colors.text,
         drawerLabelStyle: {
           fontSize: 20,
+        
         },
         headerStyle: {
-          backgroundColor: 'red',
+          backgroundColor: '#E6CCFF',
+          //elevation: 0,
           borderBottomWidth: 0,
         },
-        headerTitle: () => <LanguageSwitcher />,
+        headerTitle: () => <Image source={Component} style={{ width: 150, height: 60, resizeMode: 'contain', marginTop: 20 }} />,
         headerLeft: () => {
             if (navigation.canGoBack()) {
                 return (
@@ -124,8 +138,30 @@ const DrawerNavigator = () => {
         component={TabNavigator}
         options={{
           title: 'Home',
-          drawerIcon: ({ color }) => <Ionicons name="home-outline" size={22} color={color} />,
+          drawerIcon: ({ color }) => (
+          <Ionicons name="home-outline" size={22} color={color} />
+            ),
         }}
+        listeners={({ navigation }) => ({
+            drawerItemPress: (e) => {
+                e.preventDefault();
+                navigation.dispatch(
+                    CommonActions.reset({
+                    index: 0,
+                    routes: [
+                        { 
+                            name: 'Main',
+                            state: {
+                                routes: 
+                                [{ name: 'HomeTab' }],
+                            },
+                        }
+                    ],
+                })
+            )
+            },
+
+            })}
       />
       <Drawer.Screen
         name="ProfileDrawer"
@@ -144,20 +180,29 @@ const DrawerNavigator = () => {
         }}
       />
       <Drawer.Screen
-        name="Login"
-        component={LoginScreen}
+        name="DummyLogin"
         options={{
-          drawerIcon: ({ color }) => <Ionicons name="log-in" size={22} color={color} />,
+            drawerLabel: 'Login / Signup',
+            drawerIcon: ({ color }) => <Ionicons name="log-in" size={22} color={color} />,
         }}
-      />
-      <Drawer.Screen
+        listeners={({ navigation }) => ({ 
+            drawerItemPress: (e) => {
+                e.preventDefault();
+                navigation.navigate('Login');
+            },
+            })}  
+        >
+            {() => null}
+        </Drawer.Screen>
+      
+      {/*<Drawer.Screen
         name="Signup"
         component={SignupScreen}
         options={{
           drawerIcon: ({ color }) => <Ionicons name="person-add" size={22} color={color} />,
         }}
       />
-      <Drawer.Screen
+      {/*<Drawer.Screen
         name="ForumDrawer"
         component={ForumScreen}
         options={{
@@ -180,7 +225,7 @@ const DrawerNavigator = () => {
           title: 'Search',
           drawerIcon: ({ color }) => <Ionicons name="search" size={22} color={color} />,
         }}
-      />
+      />*/}
       <Drawer.Screen
         name="languages"
         component={LanguageSwitcher}
@@ -190,16 +235,22 @@ const DrawerNavigator = () => {
         }}
         />
     </Drawer.Navigator>
+    </>
   );
 };
 
 // Main stack
-const MainNavigator = () => (
-  <Stack.Navigator screenOptions={{ headerShown: false }}>
+const MainNavigator = () => {
+    const {colors,dark} = useTheme();
+
+    return (
+  <Stack.Navigator screenOptions={{headerShown: false }}>
     <Stack.Screen name="DrawerRoot" component={DrawerNavigator} />
     <Stack.Screen name="ForgotPassword" component={ForgotPassword} />
     <Stack.Screen name="Login" component={LoginScreen} />
+    <Stack.Screen name="Signup" component={SignupScreen} />
   </Stack.Navigator>
-);
+    );
+};
 
 export default MainNavigator;
