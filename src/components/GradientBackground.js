@@ -1,7 +1,6 @@
 import { LinearGradient } from 'expo-linear-gradient';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, Platform, StatusBar as RNStatusBar, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function GradientBackground({
   children,
@@ -11,6 +10,8 @@ export default function GradientBackground({
   statusBarStyle = 'light',
   padding = 20,
 }) {
+  const topPadding = Platform.OS === 'android' ? RNStatusBar.currentHeight || 0 : 0;
+
   return (
     <LinearGradient
       colors={colors}
@@ -18,10 +19,11 @@ export default function GradientBackground({
       end={end}
       style={styles.gradient}
     >
-      <StatusBar style={statusBarStyle} />
-      {/*<SafeAreaView style={[styles.safeArea, { padding }]}>*/}
+      <StatusBar style={statusBarStyle} translucent={false} />
+      
+      <View style={[styles.contentContainer, { paddingTop: topPadding, paddingHorizontal: padding }]}>
         {children}
-      {/*</SafeAreaView>*/}
+      </View>
     </LinearGradient>
   );
 }
@@ -30,8 +32,7 @@ const styles = StyleSheet.create({
   gradient: {
     flex: 1,
   },
-  safeArea: {
+  contentContainer: {
     flex: 1,
   },
 });
-

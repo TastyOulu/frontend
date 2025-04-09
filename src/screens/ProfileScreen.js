@@ -251,7 +251,7 @@ export default function ProfileScreen({ navigation }) {
     };
 
     return (
-        <GradientBackground>
+        <GradientBackground statusBarStyle="dark">
             <View style={styles.container}>
                 {/* Title + settings to right corner */}
                 <View style={{position: 'absolute', top: 0, right: 0,alignItems:'center'}}>
