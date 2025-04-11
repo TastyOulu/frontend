@@ -52,7 +52,7 @@ const TabNavigator = () => (
         shadowOpacity: 0,
         borderTopWidth: 0,
       },
-      tabBarActiveTintColor: '#0000FF',
+      tabBarActiveTintColor: 'purple',
       tabBarInactiveTintColor: '#000',
       headerShown: false,
     })}
@@ -98,7 +98,7 @@ const DrawerNavigator = () => {
         headerTintColor: colors.text,
         drawerPosition: "right",
         drawerActiveBackgroundColor: colors.border,
-        drawerActiveTintColor: colors.primary,
+        drawerActiveTintColor: 'purple',
         drawerInactiveTintColor: colors.text,
         drawerLabelStyle: {
           fontSize: 20,

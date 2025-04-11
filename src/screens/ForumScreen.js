@@ -71,7 +71,9 @@ export default function ForumScreen({ navigation }) {
         keyboardVerticalOffset={80}
       >
         {!selectedTopic ? (
-          <ScrollView contentContainerStyle={styles.container}>
+          <ScrollView 
+          contentContainerStyle={styles.container}
+          showsVerticalScrollIndicator={false}>
             <View style={styles.header}>
               <Ionicons
                 name="fast-food"
