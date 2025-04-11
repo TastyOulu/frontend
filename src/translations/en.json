@@ -122,7 +122,13 @@
 "// CHATBOT": "",
 "ui_chatbot_hey": "Hello! I'm your AI assistant. How can I help you today?",
 "ui_chatbot_placeholder": "Write a message...",
-"ui_chatbot_error": "I'm sorry, I can't help you with that right now."
+"ui_chatbot_error": "I'm sorry, I can't help you with that right now.",
+
+"//DRAWER": "",
+"ui.drawer.home": "Home",
+"ui.drawer.profile": "Profile",
+"ui.drawer.info": "Info",
+"ui.drawer.loginandsignup": "Login / Signup"
 
 
 }

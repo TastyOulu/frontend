@@ -121,6 +121,12 @@
   "// CHATBOT": "",
   "ui_chatbot_hey": "Hei! Olen tekoälyavustajasi. Miten voin auttaa sinua tänään?",
   "ui_chatbot_placeholder": "Kirjoita viesti...",
-  "ui_chatbot_error": "Olen pahoillani, mutta en voi auttaa sinua juuri nyt."
+  "ui_chatbot_error": "Olen pahoillani, mutta en voi auttaa sinua juuri nyt.",
+
+  "//DRAWER": "",
+  "ui.drawer.home": "Etusivu",
+  "ui.drawer.profile": "Profiili",
+  "ui.drawer.info": "Info",
+  "ui.drawer.loginandsignup": "Kirjaudu sisään / Rekisteröidy"
 
 }

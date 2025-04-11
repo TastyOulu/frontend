@@ -7,6 +7,7 @@ import { TouchableOpacity, Image,View,StyleSheet, Platform,StatusBar } from 'rea
 import { DrawerActions, useNavigation } from '@react-navigation/native';
 import { CommonActions } from '@react-navigation/native'
 import { useTheme } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 import { DrawerContentScrollView, DrawerItemList } from '@react-navigation/drawer';
 import HomeScreen from '../screens/HomeScreen';
 import ProfileScreen from '../screens/ProfileScreen';
@@ -52,7 +53,7 @@ const TabNavigator = () => (
         shadowOpacity: 0,
         borderTopWidth: 0,
       },
-      tabBarActiveTintColor: '#0000FF',
+      tabBarActiveTintColor: 'purple',
       tabBarInactiveTintColor: '#000',
       headerShown: false,
     })}
@@ -61,16 +62,17 @@ const TabNavigator = () => (
     <Tab.Screen name="Forum" component={ForumScreen} />
     <Tab.Screen name="Reviews" component={ReviewsScreen} />
     <Tab.Screen name="Search" component={SearchScreen} />
-     {/*<Tab.Screen name="Profile" component={ProfileScreen} />*/}
+    {/*<Tab.Screen name="Profile" component={ProfileScreen} />*/}
   </Tab.Navigator>
 );
 
 const DrawerNavigator = () => {
   const { colors, dark } = useTheme();
+  const { t } = useTranslation();
 
   return (
     <>
-     <StatusBar
+    <StatusBar
         barStyle={dark ? 'light-content' : 'dark-content'}
         backgroundColor={colors.card}
         animated={true}
@@ -81,12 +83,9 @@ const DrawerNavigator = () => {
             {...props}
             contentContainerStyle={{ flex: 1, justifyContent: 'space-between' }}
             >
-            {/* Yläosa: DrawerItemList renderöidään normaalisti */}
             <View>
                 <DrawerItemList {...props} />
             </View>
-
-            {/* Alareuna: LanguageSwitcher näkyviin */}
             <View style={styles.languageContainer}>
                 <LanguageSwitcher />
             </View>
@@ -98,7 +97,7 @@ const DrawerNavigator = () => {
         headerTintColor: colors.text,
         drawerPosition: "right",
         drawerActiveBackgroundColor: colors.border,
-        drawerActiveTintColor: colors.primary,
+        drawerActiveTintColor: 'purple',
         drawerInactiveTintColor: colors.text,
         drawerLabelStyle: {
           fontSize: 20,
@@ -137,7 +136,7 @@ const DrawerNavigator = () => {
         name="Main"
         component={TabNavigator}
         options={{
-          title: 'Home',
+          title: t('ui.drawer.home'),
           drawerIcon: ({ color }) => (
           <Ionicons name="home-outline" size={22} color={color} />
             ),
@@ -165,7 +164,7 @@ const DrawerNavigator = () => {
           name="ProfileDrawer"
           component={ProfileScreen}
           options={{
-            title: 'Profile',
+            title: t('ui.drawer.profile'),
             drawerIcon: ({ color }) => <Ionicons name="person-outline" size={22} color={color} />,
           }}
         />
@@ -173,17 +172,17 @@ const DrawerNavigator = () => {
           name="InfoDrawer"
           component={InfoScreen}
           options={{
-            title: 'Info',
+            title: t('ui.drawer.info'),
             drawerIcon: ({ color }) => (
               <Ionicons name="information-circle-outline" size={22} color={color} />
             ),
           }}
         />
-       
+
         <Drawer.Screen
           name="DummyLogin"
           options={{
-            drawerLabel: 'Login / Signup',
+            drawerLabel: t('ui.drawer.loginandsignup'),
             drawerIcon: ({ color }) => <Ionicons name="log-out-outline" size={22} color={color} />,
           }}
           listeners={({ navigation }) => ({

@@ -118,7 +118,13 @@
     "// CHATBOT": "",
     "ui_chatbot_hey": "Hallå där! Jag är din AI-assistent. Hur kan jag hjälpa dig idag?",
     "ui_chatbot_placeholder": "Skriv ett meddelande...",
-    "ui_chatbot_error": "Jag är ledsen, men jag kan inte hjälpa dig med det just nu."
+    "ui_chatbot_error": "Jag är ledsen, men jag kan inte hjälpa dig med det just nu.",
+
+    "//DRAWER": "",
+    "ui.drawer.home": "Startsida",
+    "ui.drawer.profile": "Profil",
+    "ui.drawer.info": "Info",
+    "ui.drawer.loginandsignup": "Logga in / Registrera dig"
   
   }
   
