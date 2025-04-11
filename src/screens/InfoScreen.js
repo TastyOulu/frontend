@@ -43,7 +43,7 @@ export default function InfoScreen() {
   return (
     <GradientBackground statusBarStyle="dark">
       <View style={styles.header}>
-        <Image source={faqImage} style={{ width: 305, height: 159, resizeMode: 'contain' }} />
+        <Text style={{fontSize:48, fontWeight:'600', color: 'black',fontStyle:'italic'}}>FAQ</Text>
       </View>
       <ScrollView contentContainerStyle={styles.scrollViewContent}>
         <View style={styles.container}>
@@ -109,6 +109,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingTop: 10,
     paddingBottom: 20,
+    marginBottom:20
   },
   image: {
     width: 305,

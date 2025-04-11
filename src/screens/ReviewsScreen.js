@@ -250,6 +250,7 @@ const ReviewScreen = () => {
     <GradientBackground>
       <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <FlatList
+          showsVerticalScrollIndicator={false}
           data={reviews}
           keyExtractor={item => item.id}
           ListHeaderComponent={

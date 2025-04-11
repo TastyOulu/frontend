@@ -22,7 +22,9 @@ export default function HomeScreen({ navigation }) {
 
   return (
     <GradientBackground statusBarStyle={colorScheme === 'dark' ? 'light' : 'dark'}>
-      <ScrollView contentContainerStyle={styles.container}>
+      <ScrollView
+      showsVerticalScrollIndicator={false}
+      contentContainerStyle={styles.container}>
         <View style={styles.inner}>
           <Pressable onPress={() => navigation.navigate('Info')}>
             <Text style={styles.text}>

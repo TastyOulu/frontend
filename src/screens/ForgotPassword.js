@@ -59,9 +59,10 @@ export default function ForgotPassword({ navigation }) {
                             <View style={{marginTop: 5,alignItems:'center',justifyContent:'center',marginBottom: 10}}>
                                 <Pressable 
                                     style={{backgroundColor: '#6200EA',alignItems:'center',width:200,borderRadius:30,paddingVertical: 12,
-                                    paddingHorizontal: 10,marginTop: 20}} 
+                                    paddingHorizontal: 10,marginTop: 20,shadowColor: '#000',shadowOffset: { width: 0, height: 2 },
+                                    shadowOpacity: 0.25,shadowRadius: 3.84,elevation: 5,borderWidth:0.1}} 
                                     onPress={handleSubmit}>
-                                    <Text style={{color:'white',fontSize:14}}>Submit</Text>
+                                    <Text style={{color:'white',fontSize:18}}>Submit</Text>
                                 </Pressable>
                             </View>
                     

@@ -49,7 +49,7 @@ const AdCarousel = () => {
 
 const styles = StyleSheet.create({
   card: {
-    width: width - 50,
+    width: width - 70,
     //margin:20,
     //overflow: 'hidden',
     backgroundColor: '#fff',

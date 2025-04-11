@@ -226,7 +226,9 @@ const SearchScreen = () => {
 
   return (
     <GradientBackground>
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
+      <ScrollView 
+      contentContainerStyle={styles.scrollContainer}
+      showsVerticalScrollIndicator={false}>
         <View style={styles.container}>
           <View style={styles.searchbarContainer}>
             <Searchbar

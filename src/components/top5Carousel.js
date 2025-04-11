@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Dimensions, StyleSheet, Text,Image } from 'react-native';
 import Carousel from 'react-native-reanimated-carousel';
 
-const { width } = Dimensions.get('window');
+const { height,width } = Dimensions.get('window');
 
 const ads = [
     { text: 'Ravintola 1' },
@@ -39,10 +39,10 @@ const Top5Carousel = () => {
 
 const styles = StyleSheet.create({
   card: {
-    width: width - 50,
+    width: width - 70,
     overflow: 'hidden',
     backgroundColor: '#fff',
-    height: 200,
+    height: height/4,
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius:20,

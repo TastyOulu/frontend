@@ -138,13 +138,19 @@ export default function SignupScreen({ navigation }) {
                     <View style={{ alignItems: 'center', marginTop: 20, marginBottom: 40 }}>
                         <Pressable
                             style={{
-                                backgroundColor: '#9859FC',
+                                backgroundColor: '#6200EA',
                                 alignItems: 'center',
                                 width: 200,
                                 borderRadius: 30,
                                 paddingVertical: 12,
                                 paddingHorizontal: 32,
                                 marginTop: 20,
+                                shadowColor: '#000',
+                                shadowOffset: { width: 0, height: 2 },
+                                shadowOpacity: 0.25,
+                                shadowRadius: 3.84,
+                                elevation: 5,
+                                borderWidth:0.1,
                             }}
                             onPress={handleSubmit}
                             disabled={loading}
