@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState,useContext,useEffect } from "react";
 import {
   View,
   Text,
@@ -12,55 +12,220 @@ import {
   Platform,
   KeyboardAvoidingView
 } from "react-native";
+import axios from "axios";
+import Constants from "expo-constants";
 import { Ionicons } from '@expo/vector-icons';
+import { AuthContext } from "../contexts/AuthContext";
 import GradientBackground from '../components/GradientBackground';
+import * as SecureStore from 'expo-secure-store';
+import { use } from "i18next";
 
+const REACT_APP_API_URL = Constants.expoConfig?.extra?.REACT_APP_API_URL
 const windowWidth = Dimensions.get('window').width;
-const CURRENT_USER = "Joulupukki88";
 const topicColors = ['#F87171', '#60A5FA', '#34D399', '#FBBF24', '#A78BFA', '#F472B6'];
 
+
+
 export default function ForumScreen({ navigation }) {
+  const {user, loading} = useContext(AuthContext)
+  const [token, setToken] = useState(null);
   const [topics, setTopics] = useState([]);
   const [newTopic, setNewTopic] = useState("");
   const [modalVisible, setModalVisible] = useState(false);
   const [messages, setMessages] = useState({});
   const [selectedTopic, setSelectedTopic] = useState(null);
   const [newMessage, setNewMessage] = useState("");
+  const [ userMap, setUserMap ] = useState({});
 
-  const handleAddTopic = () => {
+  useEffect(() => {
+    const getToken = async () => {
+      const storedToken = await SecureStore.getItemAsync('userToken');
+      setToken(storedToken);
+    };
+    getToken();
+  }, []);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const storedToken = await SecureStore.getItemAsync('userToken');
+      setToken(storedToken);
+
+      if (!storedToken) {
+        navigation.navigate("Login");
+        return;
+      }
+
+      if (storedToken) {
+        try {
+          const res = await axios.get(`${REACT_APP_API_URL}/topics`, {
+            headers: { Authorization: `Bearer ${storedToken}` },
+          });
+          setTopics(res.data);
+
+          const messagesMap = {}
+          const userIds = new Set ()
+          for (const topic of res.data) {
+            userIds.add(topic.creatorUserId)
+            try {
+              const commentsRes = await axios.get(`${REACT_APP_API_URL}/topic/${topic._id}/comments`, {
+                headers: { Authorization: `Bearer ${storedToken}` },
+              });
+              messagesMap[topic.title] = commentsRes.data;
+              commentsRes.data.forEach(comment => {
+                if (comment.commenterUserId) userIds.add(comment.commenterUserId);
+              });
+            } catch (err) {
+              console.warn(`Failed to load comments for topic ${topic.title}`);
+              messagesMap[topic.title] = [];
+            }
+          }
+
+          const fetchedUserMap = {};
+          await Promise.all([...userIds].map(async (id) => {
+            try {
+              const res = await axios.get(`${REACT_APP_API_URL}/user/user/${id}`, {
+                headers: { Authorization: `Bearer ${storedToken}` },
+              });
+              fetchedUserMap[id] = res.data.username;
+            } catch (err) {
+              console.warn(`Could not fetch username for ID ${id}`);
+            }
+          }));
+          setUserMap(fetchedUserMap);
+          setMessages(messagesMap);
+
+        } catch (err) {
+          console.error('Failed to fetch topics:', err);
+        }
+      }
+    };
+    fetchData();
+  }, []);
+
+  const getUsernameById = (id) => {
+    if (!id) return 'Anonymous';
+    const username = userMap[id];
+    return username ? username : 'Anonymous';
+  };  
+  
+  const handleAddTopic = async () => {
+    if (!user || !user.id || !token) {
+      console.error("User not found. Please log in.");
+      return;
+    }
     if (newTopic.trim() !== "") {
-      const topic = {
-        title: newTopic,
-        user: CURRENT_USER,
-        createdAt: new Date().toLocaleString([], { dateStyle: 'short', timeStyle: 'short' }),
-      };
-      setTopics([...topics, topic]);
-      setMessages({ ...messages, [newTopic]: [] });
+      
+      try {
+        const response = await axios.post(`${REACT_APP_API_URL}/topic`, {
+          title: newTopic,
+          creatorUserId: user.id,
+          }, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          })
+      const createdTopic = response.data;
+
+      setTopics([...topics, createdTopic]);
+      setMessages({ ...messages, [createdTopic.title]: [] });
       setNewTopic("");
       setModalVisible(false);
+    } catch (error) {
+      console.error("Error creating topic:", error);
     }
-  };
+  }
+}
 
-  const handleAddMessage = () => {
-    if (newMessage.trim() !== "") {
-      const updatedMessages = { ...messages };
-      const newMsg = {
-        user: CURRENT_USER,
+  const handleAddMessage = async () => {
+    if (newMessage.trim() !== "" && selectedTopic && token) {
+      try {
+        const res = await axios.post(`${REACT_APP_API_URL}/topic/${selectedTopic._id}/comments`, {
         text: newMessage,
-        likes: 0,
-        createdAt: new Date().toLocaleString([], { dateStyle: 'short', timeStyle: 'short' }),
-      };
-      updatedMessages[selectedTopic].push(newMsg);
-      setMessages(updatedMessages);
+        commenterUserId: user.id,
+        },
+
+        { 
+          headers: { 
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json' ,
+        },
+       }
+        )
+
+       const newComment =  res.data
+       const updated = [...(messages[selectedTopic.title] || []), newComment]
+      
+      setMessages(prev => ({...prev, [selectedTopic.title]: updated }));
       setNewMessage("");
+    } catch (error) {
+      console.error("Error adding message:", error);
     }
   };
+}
+
+const handleEditComment = async (commentId, newText) => {
+  try {
+    const res = await axios.put(
+      `${REACT_APP_API_URL}/comment/${commentId}`,
+      { text: newText },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+
+    const updatedComment = res.data;
+
+    const updatedMessages = messages[selectedTopic.title].map(msg =>
+      msg._id === commentId ? updatedComment : msg
+    );
+
+    setMessages(prev => ({ ...prev, [selectedTopic.title]: updatedMessages }));
+  } catch (error) {
+    console.error('Error editing comment:', error.message);
+  }
+};
 
   const handleLikeMessage = (index) => {
     const updatedMessages = { ...messages };
     updatedMessages[selectedTopic][index].likes += 1;
     setMessages(updatedMessages);
   };
+
+  const handleDeleteTopic = async (id) => {
+    try {
+      await axios.delete(`${REACT_APP_API_URL}/topic/${id}`, {
+        data: { user: user.username },
+      });
+      setTopics(topics.filter(topic => topic._id !== id));
+      setSelectedTopic(null);
+    } catch (error) {
+      console.error('Error deleting topic:', error.message);
+    }
+  };
+
+  const handleDeleteComment = async (commentId) => {
+    try {
+      await axios.delete(
+        `${REACT_APP_API_URL}/comment/${commentId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+  
+      const filteredMessages = messages[selectedTopic.title].filter(msg => msg._id !== commentId);
+      setMessages(prev => ({ ...prev, [selectedTopic.title]: filteredMessages }));
+    } catch (error) {
+      console.error('Error deleting comment:', error.message);
+    }
+  };
+  
+  
 
   return (
     <GradientBackground statusBarStyle="dark">
@@ -93,18 +258,30 @@ export default function ForumScreen({ navigation }) {
             </TouchableOpacity>
 
             <View style={styles.topicList}>
-              {topics.map((topic, index) => (
-                <TouchableOpacity
-                  key={index}
+              {topics.map((topic,index) => (
+                <View
+                  key={topic._id || index}
                   style={[
                     styles.topicButton,
                     { backgroundColor: topicColors[index % topicColors.length] }
                   ]}
-                  onPress={() => setSelectedTopic(topic.title)}
                 >
+                <TouchableOpacity onPress={() => setSelectedTopic(topic)}>
+                  
                   <Text style={styles.topicText}>{topic.title}</Text>
-                  <Text style={styles.topicMeta}>Created by {topic.user} at {topic.createdAt} | Comments: {(messages[topic.title] || []).length}</Text>
+                  <Text style={styles.topicMeta}>
+                    Created by {getUsernameById(topic.creatorUserId)} at {new Date(topic.timestamp).toLocaleDateString()} | Comments: {(messages[topic.title] || []).length}</Text>
                 </TouchableOpacity>
+
+                {user && getUsernameById(topic.creatorUserId) === user.username && (
+              <TouchableOpacity
+                onPress={() => handleDeleteTopic(topic._id)}
+                style={{ position: 'absolute', top: 10, right: 10 }}
+              >
+                <Ionicons name="trash-outline" size={20} color="white" />
+              </TouchableOpacity>
+            )}
+                </View>
               ))}
             </View>
 
@@ -146,20 +323,30 @@ export default function ForumScreen({ navigation }) {
                 <Ionicons name="arrow-back" size={28} color="white" />
               </TouchableOpacity>
               <View style={styles.topicTitleContainer}>
-                <Text style={styles.selectedTopicTitle}>{selectedTopic}</Text>
+                <Text style={styles.selectedTopicTitle}>{selectedTopic.title}</Text>
               </View>
             </View>
 
             <ScrollView style={styles.messageList}>
-              {(messages[selectedTopic] || []).slice().reverse().map((message, index) => (
-                <View key={index} style={styles.messageBubble}>
+              {(messages[selectedTopic.title] || []).map((message, index) => (
+                <View key={message._id ||index} style={styles.messageBubble}>
                   <View style={styles.userRow}>
                     <Ionicons name="person-circle-outline" size={20} color="#fff" />
-                    <Text style={styles.userName}>{message.user}</Text>
-                    <Text style={styles.messageTimestamp}>{message.createdAt}</Text>
+                    <Text style={styles.userName}>{getUsernameById(message.commenterUserId)}</Text>
+                    <Text style={styles.messageTimestamp}>{new Date (message.timestamp).toLocaleDateString()}</Text>
                   </View>
                   <Text style={styles.messageText}>{message.text}</Text>
-                  <View style={styles.likeRow}>
+                  {user && getUsernameById(message.commenterUserId) === user.username && (
+                  <View style={{ flexDirection: 'row', marginTop: 5 }}>
+                    <TouchableOpacity onPress={() => handleEditComment(message._id, 'Muokattu viesti')}>
+                      <Ionicons name="create-outline" size={18} color="white" />
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => handleDeleteComment(message._id)} style={{ marginLeft: 10 }}>
+                      <Ionicons name="trash-outline" size={18} color="white" />
+                    </TouchableOpacity>
+                  </View>
+                )}
+                    <View style={styles.likeRow}>
                     <TouchableOpacity onPress={() => handleLikeMessage(messages[selectedTopic].length - 1 - index)}>
                       <Ionicons name="heart-outline" size={20} color="#fff" />
                     </TouchableOpacity>
@@ -187,6 +374,8 @@ export default function ForumScreen({ navigation }) {
     </GradientBackground>
   );
 }
+
+
 
 const styles = StyleSheet.create({
   container: {
