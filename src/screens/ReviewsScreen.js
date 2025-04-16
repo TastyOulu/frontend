@@ -25,7 +25,7 @@ const ReviewScreen = () => {
   const [username, setUsername] = useState(null);
   const [isUserLoading, setIsUserLoading] = useState(true);
   const [selectedRestaurantId, setSelectedRestaurantId] = useState(null);
-
+  const [userId, setUserId] = useState(null);
 
   const GOOGLE_PLACES_API_KEY = Constants.expoConfig?.extra?.googlePlacesApiKey;
   const REACT_APP_API_URL = Constants.expoConfig?.extra?.REACT_APP_API_URL;
@@ -39,8 +39,10 @@ const ReviewScreen = () => {
           headers: { Authorization: `Bearer ${token}` },
         });
         setUsername(data?.username || 'Anonymous');
+        setUserId(data?.userId || null );
       } catch {
         setUsername('Anonymous');
+        setUserId(null);
       } finally {
         setIsUserLoading(false);
       }
@@ -49,72 +51,102 @@ const ReviewScreen = () => {
   }, []);
 
   useEffect(() => {
-      const fetchReviews = async () => {
-        try {
-          const token = await SecureStore.getItemAsync('userToken');
-    
-          const response = await axios.get(`${REACT_APP_API_URL}/reviews`, {
-            headers: token ? { Authorization: `Bearer ${token}` } : {},
-            validateStatus: status => status < 500,
-          });
-    
-          if (response.status === 404) {
-            setReviews([]);
-            return;
-          }
-    
-          const reviewsData = Array.isArray(response.data) ? response.data : [];
-    
-          const nameCache = new Map();
-    
-          const enrichedReviews = await Promise.all(
-            reviewsData.map(async r => {
-              let restaurantName = `Restaurant ID ${r.restaurantId}`;
-    
-              if (nameCache.has(r.restaurantId)) {
-                restaurantName = nameCache.get(r.restaurantId);
-              } else {
-                try {
-                  const detailsUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${r.restaurantId}&fields=name&key=${GOOGLE_PLACES_API_KEY}`;
-                  const res = await fetch(detailsUrl);
-                  const data = await res.json();
-    
-                  if (data?.result?.name) {
-                    restaurantName = data.result.name;
-                    nameCache.set(r.restaurantId, restaurantName);
-                  }
-                } catch (err) {
-                  console.warn('Google Places API error:', err);
-                }
-              }
-    
-              return {
-                id: r.reviewId?.toString() || Math.random().toString(),
-                restaurant: restaurantName,
-                review: r.review,
-                rating: r.grade || 0,
-                image: null,
-                username: `User ${r.userId || 'Unknown'}`,
-                date: new Date(r.createdAt).toLocaleString(),
-                upVotes: 0,
-                downVotes: 0,
-                userVote: null,
-              };
-            })
-          );
-    
-          setReviews(enrichedReviews);
-        } catch (error) {
-          console.error('Failed to fetch reviews:', error);
-          Alert.alert('Error', 'Unable to load reviews.');
+    const fetchReviews = async () => {
+      try {
+        const token = await SecureStore.getItemAsync('userToken');
+  
+        const response = await axios.get(`${REACT_APP_API_URL}/reviews`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+          validateStatus: status => status < 500,
+        });
+  
+        if (response.status === 404) {
+          setReviews([]);
+          return;
         }
-      };
+  
+        const reviewsData = Array.isArray(response.data) ? response.data : [];
+  
+        const restaurantNameCache = new Map();
+        const usernameCache = new Map();
+  
+        const enrichedReviews = await Promise.all(
+          reviewsData.map(async r => {
+            let restaurantName = `Restaurant ID ${r.restaurantId}`;
+  
+            if (restaurantNameCache.has(r.restaurantId)) {
+              restaurantName = restaurantNameCache.get(r.restaurantId);
+            } else {
+              try {
+                const detailsUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${r.restaurantId}&fields=name&key=${GOOGLE_PLACES_API_KEY}`;
+                const res = await fetch(detailsUrl);
+                const data = await res.json();
+  
+                if (data?.result?.name) {
+                  restaurantName = data.result.name;
+                  restaurantNameCache.set(r.restaurantId, restaurantName);
+                }
+              } catch (err) {
+                console.warn('Google Places API error:', err);
+              }
+            }
+  
+            let username = `User ${r.userId || 'Unknown'}`;
+            let avatar = null;
+            if (usernameCache.has(r.userId)) {
+              const cached = usernameCache.get(r.userId);
+              username = cached.username;
+              avatar = cached.avatar;
+            } else {
+              try {
+                const userToken = await SecureStore.getItemAsync('userToken');
+                const userRes = await axios.get(`${REACT_APP_API_URL}/user/user/${r.userId}`, {
+                  headers: { Authorization: `Bearer ${userToken}` },
+                });
+                if (userRes.data?.username) {
+                  username = userRes.data.username;
+                  avatar = userRes.data.avatar;
+                  usernameCache.set(r.userId, { username, avatar });
+                }
+              } catch (err) {
+                console.warn('Error fetching user data:', err);
+              }
+            }
+  
+            const reviewDate = new Date(r.createdAt).toLocaleDateString();
+  
+            return {
+              id: r.reviewId?.toString() || Math.random().toString(),
+              restaurant: restaurantName,
+              review: r.review,
+              rating: r.grade || 0,
+              image: null,
+              username: username,
+              avatar: avatar,
+              restaurantId: r.restaurantId,
+              userId: r.userId,
+              date: reviewDate,
+              createdAt: r.createdAt, // Keep the original createdAt for sorting
+              upVotes: Array.isArray(r.likes) ? r.likes.length : 0,
+              downVotes: 0,
+              userVote: Array.isArray(r.likes) && r.likes.some(like => like.username === username) ? 'up' : null,
+              likes: Array.isArray(r.likes) ? r.likes : [],
+            };
+          })
+        );
+  
+        setReviews(
+          enrichedReviews.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+        );
+      } catch (error) {
+        console.warn('Failed to fetch reviews:', error);
+        Alert.alert('Error', 'Unable to load reviews.');
+      }
+    };
+  
+    fetchReviews();
+  }, []);
     
-      fetchReviews();
-    }, []);
-    
-    
-
   useEffect(() => {
     if (restaurant) fetchRestaurants(restaurant);
     else setFetchedRestaurants([]);
@@ -126,6 +158,7 @@ const ReviewScreen = () => {
       if (updated) setSelectedReview(updated);
     }
   }, [reviews]);
+  
 
   const handleStarPress = index => setRating(index + 1);
 
@@ -166,6 +199,7 @@ const ReviewScreen = () => {
             restaurantId,
             review,
             grade: rating,
+            image,
           },
           {
             headers: {
@@ -178,7 +212,7 @@ const ReviewScreen = () => {
         const newReview = {
           ...response.data,
           id: Math.random().toString(),
-          restaurant: restaurant,
+          restaurant,
           review,
           rating,
           image,
@@ -216,19 +250,71 @@ const ReviewScreen = () => {
     setModalVisible(true);
   };
 
-  const voteHandler = (id, type) => {
-    setReviews(prev =>
-      prev.map(r => {
-        if (r.id !== id) return r;
-        const { upVotes, downVotes, userVote } = r;
-        if (userVote === type) return r;
-        if (userVote === 'up' && type === 'down')
-          return { ...r, upVotes: upVotes - 1, downVotes: downVotes + 1, userVote: 'down' };
-        if (userVote === 'down' && type === 'up')
-          return { ...r, downVotes: downVotes - 1, upVotes: upVotes + 1, userVote: 'up' };
-        return { ...r, [`${type}Votes`]: (type === 'up' ? upVotes : downVotes) + 1, userVote: type };
-      })
-    );
+  const voteHandler = async (id, type) => {
+    try {
+      const token = await SecureStore.getItemAsync('userToken');
+      if (!token) {
+        Alert.alert('Error', 'Authentication token missing.');
+        return;
+      }
+
+      await axios.post(
+        `${REACT_APP_API_URL}/review/${id}/vote`,
+        {
+          voteType: type,
+          username: username,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          }
+        }
+      );
+
+      setReviews(prev =>
+        prev.map(r => {
+          if (r.id !== id) return r;
+  
+          let newUpVotes = r.upVotes;
+          let newDownVotes = r.downVotes;
+          let newUserVote = r.userVote;
+          let newLikes = [...r.likes]; 
+  
+          if (r.userVote === type) {
+            newUserVote = null;
+            if (type === 'up') {
+              newUpVotes = r.upVotes - 1;
+              newLikes = newLikes.filter(like => like.username !== username);
+            } else {
+              newDownVotes = r.downVotes - 1;
+            }
+          } else if (r.userVote === 'up' && type === 'down') {
+            newUpVotes = r.upVotes - 1;
+            newDownVotes = r.downVotes + 1;
+            newUserVote = 'down';
+            newLikes = newLikes.filter(like => like.username !== username);
+          } else if (r.userVote === 'down' && type === 'up') {
+            newDownVotes = r.downVotes - 1;
+            newUpVotes = r.upVotes + 1;
+            newUserVote = 'up';
+            newLikes.push({ username: username });
+          } else {
+            newUserVote = type;
+            if (type === 'up') {
+              newUpVotes = r.upVotes + 1;
+              newLikes.push({ username: username });
+            } else {
+              newDownVotes = r.downVotes + 1;
+            }
+          }
+          return { ...r, upVotes: newUpVotes, downVotes: newDownVotes, userVote: newUserVote, likes: newLikes };
+        })
+      );
+
+    } catch (error) {
+      console.error('Failed to handle vote:', error);
+      Alert.alert('Error', 'Failed to handle vote.');
+    }
   };
 
   const fetchRestaurants = async query => {
@@ -244,6 +330,43 @@ const ReviewScreen = () => {
     } catch {
       setFetchedRestaurants([]);
     }
+  };
+
+  const deleteReview = async (reviewId) => {
+    Alert.alert(
+      "Delete Review",
+      "Are you sure you want to delete this review?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel"
+        },
+        {
+          text: "OK",
+          onPress: async () => {
+            try {
+              const token = await SecureStore.getItemAsync('userToken');
+              if (!token) {
+                Alert.alert('Error', 'Authentication token missing.');
+                return;
+              }
+
+              await axios.delete(`${REACT_APP_API_URL}/review/${reviewId}`, {
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                },
+              });
+
+              setReviews(prevReviews => prevReviews.filter(review => review.id !== reviewId));
+              Alert.alert('Success', 'Review deleted successfully!');
+            } catch (error) {
+              console.log('Failed to delete review:', error);
+              Alert.alert('Error', 'Failed to delete review.');
+            }
+          }
+        }
+      ]
+    );
   };
 
   return (
@@ -330,7 +453,9 @@ const ReviewScreen = () => {
               </View>
               <TouchableOpacity onPress={() => openReview(item)} activeOpacity={0.8}>
                 <View style={styles.reviewCardTop}>
-                  {item.image && <Image source={{ uri: item.image }} style={styles.reviewImage} />}
+                {item.avatar && (
+                  <Image source={{ uri: item.avatar }} style={styles.avatar} />
+                    )}
                   <Text style={styles.reviewTitle}>{item.restaurant}</Text>
                   <Text style={styles.reviewDescription}>{item.review}</Text>
                   <Text style={styles.reviewRating}>{'⭐'.repeat(item.rating)}</Text>
@@ -350,6 +475,11 @@ const ReviewScreen = () => {
           <View style={styles.modalContainer}>
             <TouchableWithoutFeedback>
               <View style={styles.modalContent}>
+              {userId === selectedReview?.userId && (
+                  <TouchableOpacity style={styles.deleteButton} onPress={() => deleteReview(selectedReview.id)}>
+                    <Ionicons name="trash-bin" size={24} color="#FF0000" />
+                  </TouchableOpacity>
+                )}
                 <Text style={styles.modalTitle}>{selectedReview?.restaurant}</Text>
                 {selectedReview?.image && <Image source={{ uri: selectedReview.image }} style={styles.modalImage} />}
                 <Text style={styles.modalText}>{selectedReview?.review}</Text>
@@ -399,7 +529,7 @@ const styles = StyleSheet.create({
   },
   searchSection: { 
     width: '90%', 
-    marginBottom: 15 
+    marginBottom: 15,
   },
   searchInput: { 
     backgroundColor: '#fff', 
@@ -411,7 +541,8 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 1 }, 
     shadowOpacity: 0.1, 
     shadowRadius: 2, 
-    elevation: 2 
+    elevation: 2,
+    marginBottom: 5,
   },
   listContainer: { 
     maxHeight: 200, 
@@ -431,7 +562,7 @@ const styles = StyleSheet.create({
   listTitle: { 
     fontSize: 16, 
     fontWeight: '600', 
-    color: '#444' 
+    color: '#444',
   },
   listAddress: { 
     fontSize: 14, 
@@ -450,7 +581,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 1 }, 
     shadowOpacity: 0.1, 
     shadowRadius: 2, 
-    elevation: 2 
+    elevation: 2,
   },
   starContainer: { 
     flexDirection: 'row', 
@@ -460,12 +591,21 @@ const styles = StyleSheet.create({
   star: { 
     fontSize: 32, 
     color: '#ccc', 
-    marginHorizontal: 3 
+    marginHorizontal: 3,
+    shadowColor: '#ccc',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 1,
+    shadowRadius: 2,
+    elevation: 2
   },
   filledStar: { 
     fontSize: 32, 
     color: '#FFD700', 
-    marginHorizontal: 3 
+    marginHorizontal: 3,
+    shadowColor: '#FFD700',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 1,
+    shadowRadius: 2
   },
   imageButton: { 
     backgroundColor: '#fff', 
@@ -509,13 +649,15 @@ const styles = StyleSheet.create({
   submitButtonText: { 
     color: '#fff', 
     fontSize: 16, 
-    fontWeight: '600' 
+    fontWeight: '600',
+    elevation: 2,
+    textAlign: 'center',
   },
   reviewHeaderText: { 
     fontSize: 18, 
     fontWeight: 'bold', 
     marginBottom: 10, 
-    alignSelf: 'center' 
+    alignSelf: 'center', 
   },
   reviewCard: { 
     backgroundColor: '#fff', 
@@ -528,34 +670,45 @@ const styles = StyleSheet.create({
     shadowRadius: 4, 
     elevation: 3, 
     width: '90%', 
-    alignSelf: 'center' 
+    alignSelf: 'center',
   },
   thumbContainer: { 
     flexDirection: 'row', 
     position: 'absolute', 
     top: 10, 
     right: 10, 
-    zIndex: 99 
+    zIndex: 99,
   },
   thumbButtonLarge: { 
     alignItems: 'center', 
     justifyContent: 'center', 
     paddingHorizontal: 30, 
     paddingVertical: 20, 
-    marginLeft: 10 
+    marginLeft: 10,
   },
   thumbCount: { 
     fontSize: 14, 
     color: '#333', 
-    marginTop: 2 
+    marginTop: 2,
+  },
+  avatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginRight: 10,
+    marginBottom: 8,
+    alignSelf: 'flex-start',
+    backgroundColor: '#ddd',
+    borderWidth: 1,
+    borderColor: '#ddd',
   },
   reviewCardTop: { 
     width: '100%', 
     marginBottom: 8 
   },
   reviewImage: { 
-    width: 100, 
-    height: 100, 
+    width: 40, 
+    height: 40, 
     borderRadius: 10, 
     marginBottom: 8, 
     alignSelf: 'flex-start' 
@@ -565,75 +718,99 @@ const styles = StyleSheet.create({
     fontWeight: 'bold', 
     marginBottom: 4, 
     color: '#333', 
-    textAlign: 'left' 
+    textAlign: 'left', 
   },
   reviewDescription: { 
     fontSize: 14, 
     fontStyle: 'italic', 
     color: '#555', 
     marginBottom: 4, 
-    textAlign: 'left' 
+    textAlign: 'left',
   },
   reviewRating: { 
     fontSize: 14, 
     color: '#FFD700', 
     textAlign: 'left', 
-    marginBottom: 4 
+    marginBottom: 4,
   },
   reviewDate: { 
     fontSize: 12, 
     color: '#999', 
     marginTop: 4, 
-    textAlign: 'right' 
+    textAlign: 'right',
+    fontStyle: 'italic'
   },
   modalContainer: { 
     flex: 1, 
     justifyContent: 'center', 
     alignItems: 'center', 
-    backgroundColor: 'rgba(0,0,0,0.5)' 
+    backgroundColor: 'rgba(0,0,0,0.5)',
   },
   modalContent: { 
     backgroundColor: '#fff', 
     padding: 20, 
     borderRadius: 16, 
     alignItems: 'center', 
-    width: '85%' 
+    width: '85%',
   },
   modalTitle: { 
     fontSize: 18, 
     fontWeight: 'bold', 
-    color: '#333' 
+    color: '#333', 
   },
   modalImage: { 
     width: 200, 
     height: 200, 
     borderRadius: 12, 
-    marginVertical: 10 
+    marginVertical: 10,
+    alignSelf: 'center',
   },
   modalText: { 
     fontSize: 16, 
     textAlign: 'center', 
     marginVertical: 10, 
-    color: '#444' 
+    color: '#444',
   },
   modalRating: { 
     fontSize: 18, 
-    color: '#FFD700' 
+    color: '#FFD700',
+    marginVertical: 10,
   },
   modalThumbContainer: { 
     flexDirection: 'row', 
     justifyContent: 'center', 
-    marginTop: 15 
+    marginTop: 15,
+    marginBottom: 10
   },
   closeButton: { 
     marginTop: 10, 
     padding: 10, 
     backgroundColor: '#6200EA', 
-    borderRadius: 8 
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '25%',
+    elevation: 2,
+    shadowColor: '#000',
   },
   closeButtonText: { 
     color: '#fff', 
-    fontSize: 16 
+    fontSize: 16,
+    fontWeight: '600'
+  },
+  deleteButton: {
+    position: 'absolute',
+    top: 10,
+    left: 10,
+    zIndex: 99,
+    padding: 5,
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.15,
+    shadowRadius: 2,
+    elevation: 2
   },
 });
 
