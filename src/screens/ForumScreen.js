@@ -36,6 +36,8 @@ export default function ForumScreen({ navigation }) {
   const [selectedTopic, setSelectedTopic] = useState(null);
   const [newMessage, setNewMessage] = useState("");
   const [ userMap, setUserMap ] = useState({});
+  const [editingCommentId, setEditingCommentId] = useState(null);
+  const [editedText, setEditedText] = useState("");
 
   useEffect(() => {
     const getToken = async () => {
@@ -45,7 +47,7 @@ export default function ForumScreen({ navigation }) {
     getToken();
   }, []);
 
-  useEffect(() => {
+  //useEffect(() => {
     const fetchData = async () => {
       const storedToken = await SecureStore.getItemAsync('userToken');
       setToken(storedToken);
@@ -60,6 +62,7 @@ export default function ForumScreen({ navigation }) {
           const res = await axios.get(`${REACT_APP_API_URL}/topics`, {
             headers: { Authorization: `Bearer ${storedToken}` },
           });
+          const topicsData = res.data;
           setTopics(res.data);
 
           const messagesMap = {}
@@ -80,6 +83,16 @@ export default function ForumScreen({ navigation }) {
             }
           }
 
+          topicsData.sort((a, b) => {
+            const commentsA = messagesMap[a.title] || [];
+            const commentsB = messagesMap[b.title] || [];
+    
+            const lastCommentA = commentsA.length > 0 ? new Date(commentsA[commentsA.length - 1].timestamp) : new Date(a.timestamp);
+            const lastCommentB = commentsB.length > 0 ? new Date(commentsB[commentsB.length - 1].timestamp) :  new Date(b.timestamp);
+    
+            return lastCommentB - lastCommentA;
+          });
+
           const fetchedUserMap = {};
           await Promise.all([...userIds].map(async (id) => {
             try {
@@ -93,14 +106,18 @@ export default function ForumScreen({ navigation }) {
           }));
           setUserMap(fetchedUserMap);
           setMessages(messagesMap);
+          setTopics(topicsData);
 
         } catch (err) {
           console.error('Failed to fetch topics:', err);
         }
       }
-    };
-    fetchData();
+    }
+    
+  useEffect(() => {
+      fetchData();
   }, []);
+
 
   const getUsernameById = (id) => {
     if (!id) return 'Anonymous';
@@ -109,7 +126,7 @@ export default function ForumScreen({ navigation }) {
   };  
   
   const handleAddTopic = async () => {
-    if (!user || !user.id || !token) {
+    if (!user || !user._id || !token) {
       console.error("User not found. Please log in.");
       return;
     }
@@ -125,24 +142,32 @@ export default function ForumScreen({ navigation }) {
             'Content-Type': 'application/json',
           },
           })
-      const createdTopic = response.data;
+      //const createdTopic = response.data;
 
-      setTopics([...topics, createdTopic]);
-      setMessages({ ...messages, [createdTopic.title]: [] });
+      //setTopics([...topics, createdTopic]);
+      //setMessages({ ...messages, [createdTopic.title]: [] });
       setNewTopic("");
-      setModalVisible(false);
+      setModalVisible(false)
+      await fetchData();
     } catch (error) {
       console.error("Error creating topic:", error);
     }
   }
+  
 }
 
   const handleAddMessage = async () => {
-    if (newMessage.trim() !== "" && selectedTopic && token) {
+
+    if (!user || !user._id || !token || !selectedTopic) {
+      console.error("User or topic not found. Please log in and select a topic.");
+      return;
+    }
+
+      if (newMessage.trim() !== "") {
       try {
-        const res = await axios.post(`${REACT_APP_API_URL}/topic/${selectedTopic._id}/comments`, {
+        const res = await axios.post(`${REACT_APP_API_URL}/topic/${selectedTopic._id}/comment`, {
         text: newMessage,
-        commenterUserId: user.id,
+        commenterUserId: user._id,
         },
 
         { 
@@ -158,17 +183,18 @@ export default function ForumScreen({ navigation }) {
       
       setMessages(prev => ({...prev, [selectedTopic.title]: updated }));
       setNewMessage("");
+      await fetchData();
     } catch (error) {
       console.error("Error adding message:", error);
     }
   };
 }
 
-const handleEditComment = async (commentId, newText) => {
+const handleEditComment = async (commentId) => {
   try {
-    const res = await axios.put(
+    await axios.put(
       `${REACT_APP_API_URL}/comment/${commentId}`,
-      { text: newText },
+      { text: editedText },
       {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -177,30 +203,47 @@ const handleEditComment = async (commentId, newText) => {
       }
     );
 
-    const updatedComment = res.data;
-
-    const updatedMessages = messages[selectedTopic.title].map(msg =>
-      msg._id === commentId ? updatedComment : msg
-    );
-
-    setMessages(prev => ({ ...prev, [selectedTopic.title]: updatedMessages }));
+    setEditingCommentId(null);
+    setEditedText("");
+    await fetchData();
   } catch (error) {
     console.error('Error editing comment:', error.message);
   }
 };
 
-  const handleLikeMessage = (index) => {
-    const updatedMessages = { ...messages };
-    updatedMessages[selectedTopic][index].likes += 1;
-    setMessages(updatedMessages);
-  };
+const handleLikeMessage = async (commentId) => {
+  if (!user || !user._id || !token) {
+    console.error("User not found or not logged in.");
+    return;
+  }
+
+  try {
+    await axios.post(`${REACT_APP_API_URL}/comment/${commentId}/like`, {
+      userId: user._id
+    }, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    // Päivitetään viestit näkymään uusilla tykkäyksillä
+    await fetchData();
+  } catch (error) {
+    console.error("Error liking comment:", error.response?.data || error.message);
+  }
+};
 
   const handleDeleteTopic = async (id) => {
     try {
       await axios.delete(`${REACT_APP_API_URL}/topic/${id}`, {
-        data: { user: user.username },
+        data: { creatorUserId: user.id },
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       });
-      setTopics(topics.filter(topic => topic._id !== id));
+      //setTopics(topics.filter(topic => topic._id !== id));
+      await fetchData();
       setSelectedTopic(null);
     } catch (error) {
       console.error('Error deleting topic:', error.message);
@@ -220,12 +263,14 @@ const handleEditComment = async (commentId, newText) => {
   
       const filteredMessages = messages[selectedTopic.title].filter(msg => msg._id !== commentId);
       setMessages(prev => ({ ...prev, [selectedTopic.title]: filteredMessages }));
+      await fetchData();
     } catch (error) {
       console.error('Error deleting comment:', error.message);
     }
   };
+
   
-  
+
 
   return (
     <GradientBackground statusBarStyle="dark">
@@ -273,7 +318,7 @@ const handleEditComment = async (commentId, newText) => {
                     Created by {getUsernameById(topic.creatorUserId)} at {new Date(topic.timestamp).toLocaleDateString()} | Comments: {(messages[topic.title] || []).length}</Text>
                 </TouchableOpacity>
 
-                {user && getUsernameById(topic.creatorUserId) === user.username && (
+              {user && getUsernameById(topic.creatorUserId) === user.username && (
               <TouchableOpacity
                 onPress={() => handleDeleteTopic(topic._id)}
                 style={{ position: 'absolute', top: 10, right: 10 }}
@@ -325,6 +370,16 @@ const handleEditComment = async (commentId, newText) => {
               <View style={styles.topicTitleContainer}>
                 <Text style={styles.selectedTopicTitle}>{selectedTopic.title}</Text>
               </View>
+
+               {/*{user && topics.creatorUserId === user.id && (
+                <TouchableOpacity
+                  onPress={() => handleDeleteTopic(topic._id)}
+                  style={{ position: 'absolute', top: 10, right: 10 }}
+                >
+                  <Ionicons name="trash-outline" size={20} color="white" />
+                </TouchableOpacity>
+              )}*/}
+
             </View>
 
             <ScrollView style={styles.messageList}>
@@ -335,23 +390,66 @@ const handleEditComment = async (commentId, newText) => {
                     <Text style={styles.userName}>{getUsernameById(message.commenterUserId)}</Text>
                     <Text style={styles.messageTimestamp}>{new Date (message.timestamp).toLocaleDateString()}</Text>
                   </View>
-                  <Text style={styles.messageText}>{message.text}</Text>
+                  {editingCommentId === message._id ? (
+  <View>
+    <TextInput
+      value={editedText}
+      onChangeText={setEditedText}
+      style={{
+        backgroundColor: 'white',
+        color: 'black',
+        borderRadius: 5,
+        padding: 5,
+        marginBottom: 5,
+      }}
+    />
+    <View style={{ flexDirection: 'row' }}>
+      <TouchableOpacity
+        onPress={() => handleEditComment(message._id)}
+        style={{ marginRight: 10 }}
+      >
+        <Text style={{ color: 'lightgreen' }}>Submit</Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        onPress={() => {
+          setEditingCommentId(null);
+          setEditedText("");
+        }}
+      >
+        <Text style={{ color: 'tomato' }}>Cancel</Text>
+      </TouchableOpacity>
+    </View>
+  </View>
+) : (
+  <Text style={styles.messageText}>{message.text}</Text>
+)}
                   {user && getUsernameById(message.commenterUserId) === user.username && (
                   <View style={{ flexDirection: 'row', marginTop: 5 }}>
-                    <TouchableOpacity onPress={() => handleEditComment(message._id, 'Muokattu viesti')}>
-                      <Ionicons name="create-outline" size={18} color="white" />
+                    <TouchableOpacity onPress={() => {
+                    setEditingCommentId(message._id);
+                    setEditedText(message.text);
+                    }}>
+                      <Ionicons name="pencil" size={18} color="black" position='absolute' top='-30' left='240' />
                     </TouchableOpacity>
                     <TouchableOpacity onPress={() => handleDeleteComment(message._id)} style={{ marginLeft: 10 }}>
-                      <Ionicons name="trash-outline" size={18} color="white" />
+                      <Ionicons name="trash-outline" size={18} color="tomato" position='absolute' top='5' left='230' />
                     </TouchableOpacity>
                   </View>
                 )}
                     <View style={styles.likeRow}>
-                    <TouchableOpacity onPress={() => handleLikeMessage(messages[selectedTopic].length - 1 - index)}>
-                      <Ionicons name="heart-outline" size={20} color="#fff" />
-                    </TouchableOpacity>
-                    <Text style={styles.likesCount}>{message.likes} likes</Text>
-                  </View>
+                        <TouchableOpacity onPress={() => handleLikeMessage(message._id)}>
+                          <Ionicons
+                            name={Array.isArray(message.likes) && message.likes.map(String).includes(String(user._id)) ? "heart" : "heart-outline"}
+                            size={20}
+                            color="red"
+                          />
+                        </TouchableOpacity>
+                        <Text style={styles.likesCount}>
+                          {Array.isArray(message.likes) ? message.likes.length : 0} likes
+                        </Text>
+                      </View>
+
+
                 </View>
               ))}
             </ScrollView>
@@ -374,6 +472,7 @@ const handleEditComment = async (commentId, newText) => {
     </GradientBackground>
   );
 }
+
 
 
 
@@ -524,7 +623,7 @@ const styles = StyleSheet.create({
     marginLeft: 10,
   },
   messageText: {
-    color: 'white',
+    color: 'black',
     fontSize: 16,
     marginBottom: 8,
   },
