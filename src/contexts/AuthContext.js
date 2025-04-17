@@ -9,6 +9,7 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [token, setToken] = useState(null);
 
   const REACT_APP_API_URL = Constants.expoConfig?.extra?.REACT_APP_API_URL;
 
@@ -24,6 +25,7 @@ export const AuthProvider = ({ children }) => {
         });
 
         if (response.status === 200) {
+          setToken(token);
           setUser(response.data);
           setError(null);
         } else {
@@ -52,6 +54,7 @@ export const AuthProvider = ({ children }) => {
 
       const { token, user } = response.data;
         await SecureStore.setItemAsync('userToken', token);
+        setToken(token);
         setUser(user);
         setError(null);
         console.log('Registration successful:', response.data);
@@ -76,6 +79,7 @@ export const AuthProvider = ({ children }) => {
 
       const { token, user } = response.data;
       await SecureStore.setItemAsync('userToken', token);
+      setToken(token);
       setUser(user);
       setError(null);
       console.log('Login successful:', response.data);
@@ -105,6 +109,7 @@ export const AuthProvider = ({ children }) => {
       }
       setUser(null);
       setError(null);
+      setToken(null)
     } catch (error) {
       console.error('Logout failed:', error);
       setError('Failed to log out');
@@ -141,7 +146,7 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   return (
-      <AuthContext.Provider value={{ user, setUser, loading, error, register, login, logout, checkAuth, deleteAccount }}>
+      <AuthContext.Provider value={{ user, token,setToken, setUser, loading, error, register, login, logout, checkAuth, deleteAccount }}>
         {children}
       </AuthContext.Provider>
   );

@@ -341,9 +341,13 @@ export default function ProfileScreen({ navigation }) {
                                 </View>
                                 <Pressable
                                     style={{backgroundColor:'red',borderRadius:30,paddingVertical: 12,alignItems:'center',marginTop: 20,width:300,marginHorizontal:32}}
-                                    onPress={() => {
+                                    onPress={async() => {
                                         setShowSettings(false);
-                                        handleLogout(navigation);
+                                        await handleLogout();
+                                        navigation.reset({
+                                            index: 0,
+                                            routes: [{ name: 'Login' }],
+                                        });
                                     }}
                                 >
                                     <Text style={{color:'white',textAlign:'center',fontSize:18}}>Log out</Text>
