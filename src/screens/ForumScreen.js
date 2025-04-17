@@ -1,4 +1,4 @@
-import React, { useState,useContext,useEffect } from "react";
+import React, { useState,useContext,useEffect,useCallback } from "react";
 import {
   View,
   Text,
@@ -10,7 +10,7 @@ import {
   Dimensions,
   StatusBar,
   Platform,
-  KeyboardAvoidingView
+  KeyboardAvoidingView, Image
 } from "react-native";
 import axios from "axios";
 import Constants from "expo-constants";
@@ -19,12 +19,12 @@ import { AuthContext } from "../contexts/AuthContext";
 import GradientBackground from '../components/GradientBackground';
 import * as SecureStore from 'expo-secure-store';
 import { use } from "i18next";
+import { useFocusEffect } from "@react-navigation/native";
 
 const REACT_APP_API_URL = Constants.expoConfig?.extra?.REACT_APP_API_URL
 const windowWidth = Dimensions.get('window').width;
 const topicColors = ['#F87171', '#60A5FA', '#34D399', '#FBBF24', '#A78BFA', '#F472B6'];
-
-
+const defaultAvatar ='https://api.dicebear.com/7.x/pixel-art/png?seed=Anonymous'
 
 export default function ForumScreen({ navigation }) {
   const {user, loading} = useContext(AuthContext)
@@ -38,14 +38,17 @@ export default function ForumScreen({ navigation }) {
   const [ userMap, setUserMap ] = useState({});
   const [editingCommentId, setEditingCommentId] = useState(null);
   const [editedText, setEditedText] = useState("");
+  const [userAvatars, setUserAvatars] = useState({})
 
-  useEffect(() => {
-    const getToken = async () => {
-      const storedToken = await SecureStore.getItemAsync('userToken');
-      setToken(storedToken);
-    };
-    getToken();
-  }, []);
+  /*if (loading || !user || !token) {
+    return (
+      <GradientBackground statusBarStyle="dark">
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <Text style={{ color: '#fff' }}>Loading forum...</Text>
+        </View>
+      </GradientBackground>
+    );
+  }*/
 
   //useEffect(() => {
     const fetchData = async () => {
@@ -60,9 +63,10 @@ export default function ForumScreen({ navigation }) {
       if (storedToken) {
         try {
           const res = await axios.get(`${REACT_APP_API_URL}/topics`, {
-            headers: { Authorization: `Bearer ${storedToken}` },
+            headers: { Authorization: `Bearer ${token}` },
           });
           const topicsData = res.data;
+          console.log("Topics fetched", res.data);
           setTopics(res.data);
 
           const messagesMap = {}
@@ -78,6 +82,7 @@ export default function ForumScreen({ navigation }) {
                 if (comment.commenterUserId) userIds.add(comment.commenterUserId);
               });
             } catch (err) {
+              console.log("Failed to fetch topics:", err);
               console.warn(`Failed to load comments for topic ${topic.title}`);
               messagesMap[topic.title] = [];
             }
@@ -113,17 +118,94 @@ export default function ForumScreen({ navigation }) {
         }
       }
     }
-    
-  useEffect(() => {
-      fetchData();
-  }, []);
 
+    useEffect(() => {
+      const getToken = async () => {
+        const storedToken = await SecureStore.getItemAsync('userToken');
+        setToken(storedToken);
+      };
+      getToken();
+    }, []);
+    
+    useFocusEffect(
+      useCallback(() => {
+    
+      //if (user && token) {
+        console.log("Fetching data...");
+        fetchData();
+
+        return () => {}
+      
+    }, [])
+  );
 
   const getUsernameById = (id) => {
     if (!id) return 'Anonymous';
     const username = userMap[id];
     return username ? username : 'Anonymous';
   };  
+
+
+  const getUserAvatarById = async (userId) => {
+    try {
+      const storedToken = await SecureStore.getItemAsync('userToken');
+      if (!storedToken) return defaultAvatar;
+
+      const response = await axios.get(`${REACT_APP_API_URL}/user/user/${userId}`, {
+        headers: { Authorization: `Bearer ${storedToken}` },
+      });
+
+      const user = response.data;
+      if (!user) return defaultAvatar;
+
+      if (user.avatar === 'ok') {
+        // Käyttäjällä ladattu kuva → haetaan base64:ksi
+        const avatarRes = await axios.get(`${REACT_APP_API_URL}/user/avatar/${userId}`, {
+          headers: { Authorization: `Bearer ${storedToken}` },
+          responseType: 'blob',
+        });
+
+        return await new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result);
+          reader.readAsDataURL(avatarRes.data);
+        });
+      } else if (user.avatar) {
+        // Esim. Dicebearin valittu avatar
+        return user.avatar;
+      } else {
+        // Ei avatar-tietoa → Dicebear generointi käyttäjänimellä
+        const seed = user.username || 'Anonymous';
+        return `https://api.dicebear.com/7.x/pixel-art/png?seed=${seed}`;
+      }
+    } catch (err) {
+      console.log(`Error fetching avatar for user ${userId}:`, err);
+      return defaultAvatar;
+    }
+  };
+
+  useEffect(() => {
+    const fetchAvatars = async () => {
+      if (!selectedTopic || !selectedTopic.title) return;
+      const currentMessages = messages[selectedTopic.title] || [];
+      const newAvatars = {};
+
+      for (const message of currentMessages) {
+        const userId = message.commenterUserId;
+        if (!userAvatars[userId]) {
+          const avatarUri = await getUserAvatarById(userId);
+          newAvatars[userId] = avatarUri;
+        }
+      }
+
+      if (Object.keys(newAvatars).length > 0) {
+        setUserAvatars((prev) => ({ ...prev, ...newAvatars }));
+      }
+    };
+
+    fetchAvatars();
+  }, [messages, selectedTopic]);
+
   
   const handleAddTopic = async () => {
     if (!user || !user._id || !token) {
@@ -158,7 +240,7 @@ export default function ForumScreen({ navigation }) {
 
   const handleAddMessage = async () => {
 
-    if (!user || !user._id || !token || !selectedTopic) {
+    if (!user || !user._id || !token || !selectedTopic || !selectedTopic._id) {
       console.error("User or topic not found. Please log in and select a topic.");
       return;
     }
@@ -274,6 +356,8 @@ const handleLikeMessage = async (commentId) => {
 
   return (
     <GradientBackground statusBarStyle="dark">
+      <ScrollView
+            showsVerticalScrollIndicator={false}>
       <StatusBar barStyle="light-content" />
       <KeyboardAvoidingView
         style={{ flex: 1 }}
@@ -350,7 +434,11 @@ const handleLikeMessage = async (commentId) => {
                     placeholder="Enter your topic..."
                     value={newTopic}
                     onChangeText={setNewTopic}
+                    maxLength={50}
                   />
+                  <Text style={{ textAlign: 'right', color: '#666' }}>
+                    {newTopic.length}/50
+                  </Text>
                   <TouchableOpacity
                     style={styles.submitButton}
                     onPress={handleAddTopic}
@@ -386,7 +474,10 @@ const handleLikeMessage = async (commentId) => {
               {(messages[selectedTopic.title] || []).map((message, index) => (
                 <View key={message._id ||index} style={styles.messageBubble}>
                   <View style={styles.userRow}>
-                    <Ionicons name="person-circle-outline" size={20} color="#fff" />
+                    <Image 
+                     source={{ uri: userAvatars[message.commenterUserId] || defaultAvatar }}
+                     style={styles.profileImage}
+                    />
                     <Text style={styles.userName}>{getUsernameById(message.commenterUserId)}</Text>
                     <Text style={styles.messageTimestamp}>{new Date (message.timestamp).toLocaleDateString()}</Text>
                   </View>
@@ -428,8 +519,9 @@ const handleLikeMessage = async (commentId) => {
                     <TouchableOpacity onPress={() => {
                     setEditingCommentId(message._id);
                     setEditedText(message.text);
-                    }}>
-                      <Ionicons name="pencil" size={18} color="black" position='absolute' top='-30' left='240' />
+                    }}
+                      >
+                      <Ionicons name="pencil" size={18} color="black" position='absolute' top='-15' left='240' />
                     </TouchableOpacity>
                     <TouchableOpacity onPress={() => handleDeleteComment(message._id)} style={{ marginLeft: 10 }}>
                       <Ionicons name="trash-outline" size={18} color="tomato" position='absolute' top='5' left='230' />
@@ -461,7 +553,11 @@ const handleLikeMessage = async (commentId) => {
                 placeholderTextColor="#999"
                 value={newMessage}
                 onChangeText={setNewMessage}
+                maxLength={50}
               />
+              <Text style={{ textAlign: 'right', color: '#666', paddingRight: 10 }}>
+                {newMessage.length}/50
+              </Text>
               <TouchableOpacity onPress={handleAddMessage} style={styles.sendButton}>
                 <Ionicons name="send" size={24} color="white" />
               </TouchableOpacity>
@@ -469,6 +565,7 @@ const handleLikeMessage = async (commentId) => {
           </View>
         )}
       </KeyboardAvoidingView>
+      </ScrollView>
     </GradientBackground>
   );
 }
@@ -599,9 +696,10 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 20,
     marginBottom: 10,
+    
   },
   messageBubble: {
-    backgroundColor: 'rgba(0,0,0,0.2)',
+    backgroundColor: 'white',
     borderRadius: 10,
     padding: 10,
     marginVertical: 5,
@@ -613,12 +711,12 @@ const styles = StyleSheet.create({
     marginBottom: 5,
   },
   userName: {
-    color: '#fff',
+    color: 'black',
     marginLeft: 5,
     fontWeight: 'bold',
   },
   messageTimestamp: {
-    color: '#fff',
+    color: 'black',
     fontSize: 12,
     marginLeft: 10,
   },
@@ -632,7 +730,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   likesCount: {
-    color: '#fff',
+    color: 'black',
     marginLeft: 8,
   },
   messageInputContainer: {
@@ -657,5 +755,16 @@ const styles = StyleSheet.create({
     backgroundColor: '#ff5da2',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  profileImage: {
+    width: 32,
+    height: 32,
+    borderRadius: 20,
+    marginRight: 10,
+    marginBottom: 5,
+    backgroundColor: '#f0f0f0',
+    alignSelf: 'flex-start',
+    borderWidth: 1,
+    borderColor: '#ccc',
   },
 });
