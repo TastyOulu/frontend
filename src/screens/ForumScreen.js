@@ -21,6 +21,7 @@ import * as SecureStore from 'expo-secure-store';
 import { use } from "i18next";
 import { useFocusEffect } from "@react-navigation/native";
 
+
 const REACT_APP_API_URL = Constants.expoConfig?.extra?.REACT_APP_API_URL
 const windowWidth = Dimensions.get('window').width;
 const topicColors = ['#F87171', '#60A5FA', '#34D399', '#FBBF24', '#A78BFA', '#F472B6'];
@@ -66,7 +67,7 @@ export default function ForumScreen({ navigation }) {
             headers: { Authorization: `Bearer ${token}` },
           });
           const topicsData = res.data;
-          console.log("Topics fetched", res.data);
+          //console.log("Topics fetched", res.data);
           setTopics(res.data);
 
           const messagesMap = {}
@@ -82,8 +83,8 @@ export default function ForumScreen({ navigation }) {
                 if (comment.commenterUserId) userIds.add(comment.commenterUserId);
               });
             } catch (err) {
-              console.log("Failed to fetch topics:", err);
-              console.warn(`Failed to load comments for topic ${topic.title}`);
+              //console.log("Failed to fetch topics:", err);
+              //console.warn(`Failed to load comments for topic ${topic.title}`);
               messagesMap[topic.title] = [];
             }
           }
@@ -131,7 +132,7 @@ export default function ForumScreen({ navigation }) {
       useCallback(() => {
     
       //if (user && token) {
-        console.log("Fetching data...");
+        //console.log("Fetching data...");
         fetchData();
 
         return () => {}
@@ -142,7 +143,7 @@ export default function ForumScreen({ navigation }) {
   const getUsernameById = (id) => {
     if (!id) return 'Anonymous';
     const username = userMap[id];
-    return username ? username : 'Anonymous';
+    return username ? username : 'Anonymous';	
   };  
 
 
@@ -159,7 +160,7 @@ export default function ForumScreen({ navigation }) {
       if (!user) return defaultAvatar;
 
       if (user.avatar === 'ok') {
-        // Käyttäjällä ladattu kuva → haetaan base64:ksi
+        // Image from user's gallery
         const avatarRes = await axios.get(`${REACT_APP_API_URL}/user/avatar/${userId}`, {
           headers: { Authorization: `Bearer ${storedToken}` },
           responseType: 'blob',
@@ -171,10 +172,10 @@ export default function ForumScreen({ navigation }) {
           reader.readAsDataURL(avatarRes.data);
         });
       } else if (user.avatar) {
-        // Esim. Dicebearin valittu avatar
+        // Avatar from dicebear
         return user.avatar;
       } else {
-        // Ei avatar-tietoa → Dicebear generointi käyttäjänimellä
+        // No avatar
         const seed = user.username || 'Anonymous';
         return `https://api.dicebear.com/7.x/pixel-art/png?seed=${seed}`;
       }
@@ -309,7 +310,7 @@ const handleLikeMessage = async (commentId) => {
       }
     });
 
-    // Päivitetään viestit näkymään uusilla tykkäyksillä
+    // Update the local state to reflect the new like
     await fetchData();
   } catch (error) {
     console.error("Error liking comment:", error.response?.data || error.message);
@@ -578,7 +579,7 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     alignItems: 'center',
     padding: 20,
-    paddingTop: 60,
+    paddingTop: 20,
   },
   header: {
     flexDirection: 'row',
@@ -591,10 +592,11 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontWeight: 'bold',
     color: 'black',
+    TextAlign: 'center',
   },
   foodIcon: {
-    position: 'absolute',
     left: 0,
+    paddingRight: 10,
   },
   topicList: {
     width: '100%',

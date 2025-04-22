@@ -4,14 +4,14 @@ import { TextInput } from 'react-native-paper';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 
-const PasswordInput = ({ value, onChangeText, showPassword, toggleShowPassword }) => {
+const PasswordInput = ({ value, onChangeText, showPassword, toggleShowPassword,placeholder }) => {
   const { t } = useTranslation();
 
   return (
     <View style={styles.inputContainer}>
       <TextInput
         style={styles.input}
-        placeholder={t('ui_password')}
+        placeholder={placeholder || t('ui_password')}
         mode="outlined"
         secureTextEntry={!showPassword}
         left={<TextInput.Icon icon="lock" />}

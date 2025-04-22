@@ -12,6 +12,7 @@ import Constants from 'expo-constants';
 import { ScrollView } from "react-native-gesture-handler";
 import PasswordInput  from "../components/PasswordInput";
 import { CommonActions } from "@react-navigation/native";
+import { useFocusEffect } from "@react-navigation/native";
 
 export default function ProfileScreen({ navigation }) {
     const [avatarUri, setAvatarUri] = useState('')
@@ -19,6 +20,7 @@ export default function ProfileScreen({ navigation }) {
     const [username, setUsername] = useState('')
     const [email, setEmail] = useState('')
     const [createdAt, setCreatedAt] = useState('')
+    const [score, setScore] = useState(0); // Assuming score is part of the user data
     const [showSettings, setShowSettings] = useState(false)
     const [isCheckingAuth, setIsCheckingAuth] = useState(true);
     const [isUsernameModalVisible, setUsernameModalVisible] = useState(false);
@@ -66,6 +68,7 @@ export default function ProfileScreen({ navigation }) {
                 setAvatarUri('');
                 setAvatarSeed('Anonymous');
                 setIsCheckingAuth(false);
+                setScore('');
                 return;
             }
 
@@ -80,11 +83,13 @@ export default function ProfileScreen({ navigation }) {
             const rawDate = response.data?.createdAt;
             const createdAt = rawDate ? new Date(rawDate).toLocaleDateString('fi-FI') : 'Not found';
             let avatar = response.data?.avatar;
+            const score = response.data?.score || 0; // Assuming score is part of the user data
 
             if (name && email) {
                 setUsername(name);
                 setEmail(email);
                 setCreatedAt(createdAt);
+                setScore(score); // Set the score in the state
 
                 if (avatar === 'ok') {
                     await fetchUserAvatar();
@@ -104,14 +109,17 @@ export default function ProfileScreen({ navigation }) {
             setCreatedAt('Not found');
             setAvatarUri('');
             setAvatarSeed('Anonymous');
+            setScore(0); // Reset score if user data fetch fails
         } finally {
             setIsCheckingAuth(false);
         }
     }, [REACT_APP_API_URL, fetchUserAvatar, setUser]);
 
-    useEffect(() => {
+    useFocusEffect(
+        useCallback(() => {
         fetchUserData();
-    }, [fetchUserData]);
+    }, [fetchUserData])
+    );
 
     useEffect(() => {
         generateRandomSeed();
@@ -307,7 +315,7 @@ export default function ProfileScreen({ navigation }) {
 
                     <Text style={{flex:1,fontSize:24,fontWeight:'bold',marginLeft:10,justifyContent:'center'}}>Welcome back {username}!</Text>
                 </View>
-                <Text style ={{fontSize:20,alignItems:'left',marginHorizontal:20}}>Your score:{/*tähän kerätyt pisteet*/}</Text>
+                <Text style ={{fontSize:20,alignItems:'center',marginHorizontal:34}}>Your score: {score}</Text>
 
                 {/* Show buttons if settings is open */}
                 {showSettings && (
@@ -315,7 +323,7 @@ export default function ProfileScreen({ navigation }) {
                         <View style={{marginTop: 20,alignItems: 'center',marginBottom:20}}>
                             <View style={{marginTop: 20,alignItems: 'center'}}>
                                 <Text style={{fontSize: 24,fontWeight: 'bold',marginBottom: 20}}>{email}</Text>
-                                <Text style={{fontSize: 16,marginBottom: 20}}>Member since: {createdAt}</Text>
+                                <Text style={{fontSize: 16,marginBottom: 20,}}>Member since: {createdAt}</Text>
                                 <View style={{alignItems:'center',marginTop: 20,marginBottom: 80}}>
                                     <Pressable
                                         style={{backgroundColor: '#6200EA',alignItems:'center',width:300,borderRadius:30,paddingVertical: 12,
