@@ -28,6 +28,7 @@ export default function ProfileScreen({ navigation }) {
     const [newPassword, setNewPassword] = useState('');
     const [oldPassword, setOldPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
+    const [confirmedLogout, setConfirmedLogout] = useState(false);
 
     const toggleShowPassword = () => setShowPassword(!showPassword);
     const { user, setUser, logout, deleteAccount, newUsername, setNewUsername, handleChangeUsername } = useContext(AuthContext);
@@ -127,12 +128,20 @@ export default function ProfileScreen({ navigation }) {
 
     useEffect(() => {
         if (!isCheckingAuth && !user) {
+            if (confirmedLogout) {
             navigation.reset({
                 index: 0,
                 routes: [{ name: 'Login' }],
             });
+            setConfirmedLogout(false);
+        } else {
+            navigation.reset({
+                index: 0,
+                routes:[{name : 'Login'}],
+            });
         }
-    }, [user, isCheckingAuth, navigation]);
+    }
+    }, [user, isCheckingAuth, confirmedLogout, navigation]);
 
     const generateRandomSeed = () => {
         const newSeed = Math.random().toString(36).substring(2, 10);
@@ -190,36 +199,47 @@ export default function ProfileScreen({ navigation }) {
             [
                 {
                     text: "Cancel",
-                    style: "cancel"
+                    style: "cancel",
+                    onPress:() => {
+                        
+                    }
                 },
                 {
                     text: "Log Out",
+                    style: "destructive",
                     onPress: async () => {
-                        await logout();
-                        navigation.dispatch(
-                            CommonActions.reset({
-                              index: 0,
-                              routes: [
-                                {
-                                  name: 'DrawerRoot',
-                                  state: {
-                                    index: 0,
-                                    routes: [
-                                      {
-                                        name: 'Main',
-                                        state: {
-                                          index: 0,
-                                          routes: [{ name: 'HomeTab' }],
+                        try {
+                            await logout();
+                            setUser(null);
+                            setConfirmedLogout(true);
+                            navigation.dispatch(
+                                CommonActions.reset({
+                                index: 0,
+                                routes: [
+                                    {
+                                    name: 'DrawerRoot',
+                                    state: {
+                                        index: 0,
+                                        routes: [
+                                        {
+                                            name: 'Main',
+                                            state: {
+                                            index: 0,
+                                            routes: [{ name: 'HomeTab' }],
+                                            },
                                         },
-                                      },
-                                    ],
-                                  },
-                                },
-                              ],
-                            })
-                          );
+                                        ],
+                                    },
+                                    },
+                                ],
+                                })
+                            );
+                            } catch (err) {
+                                Alert.alert("Error", "Failed to log out");
+                                setConfirmedLogout(false);
+                                }
+                            }
                         },
-                      },
                     ],
                   );
                 };
@@ -344,14 +364,8 @@ export default function ProfileScreen({ navigation }) {
                                 </View>
                                 <Pressable
                                     style={{backgroundColor:'red',borderRadius:30,paddingVertical: 12,alignItems:'center',marginTop: 20,width:300,marginHorizontal:32}}
-                                    onPress={async() => {
-                                        setShowSettings(false);
-                                        await handleLogout();
-                                        navigation.reset({
-                                            index: 0,
-                                            routes: [{ name: 'Login' }],
-                                        });
-                                    }}
+                                    onPress={handleLogout}
+                                        
                                 >
                                     <Text style={{color:'white',textAlign:'center',fontSize:18}}>Log out</Text>
                                 </Pressable>

@@ -109,7 +109,7 @@ export const AuthProvider = ({ children }) => {
         await SecureStore.deleteItemAsync('userToken');
         console.log('Logout successful');
       }
-      setUser(null);
+      //setUser(null);
       setError(null);
       setToken(null)
     } catch (error) {
