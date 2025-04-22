@@ -5,6 +5,7 @@
   "ui_here": "here",
   "ui_best_offers": "Best offers in this month:",
   "ui_top_5": "Top 5 restaurants",
+  "ui_cafe": "Cafes in Oulu",
 
   "// ProfileScreen": "",
   "ui_profile_title": "My Profile",
@@ -123,6 +124,7 @@
 "ui_chatbot_hey": "Hello! I'm your AI assistant. How can I help you today?",
 "ui_chatbot_placeholder": "Write a message...",
 "ui_chatbot_error": "I'm sorry, I can't help you with that right now.",
+"ui_chatbot_login_required": "Please log in to use this feature.",
 
 "//DRAWER": "",
 "ui.drawer.home": "Home",

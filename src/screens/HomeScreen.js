@@ -8,6 +8,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import GradientBackground from '../components/GradientBackground';
 import AdCarousel from '../components/AdCarousel';
 import Top5Carousel from '../components/top5Carousel';
+import CafeCarousel from '../components/CafeCarousel';
 import AIBot from '../components/AIBot';
 
 export default function HomeScreen({ navigation }) {
@@ -35,14 +36,23 @@ export default function HomeScreen({ navigation }) {
             </Text>
           </Pressable>
 
-          <Text style={styles.heading}>{t('ui_best_offers')}</Text>
-          <AdCarousel />
+          <View style={styles.section}>
+  <Text style={styles.heading}>{t('ui_best_offers')}</Text>
+  <AdCarousel />
+</View>
 
-          <Text style={styles.heading}>{t('ui_top_5')}</Text>
-          <Top5Carousel />
+<View style={styles.section}>
+  <Text style={styles.heading}>{t('ui_top_5')}</Text>
+  <Top5Carousel />
+</View>
+
+<View style={styles.section}>
+  <Text style={styles.heading}>{t('ui_cafe')}</Text>
+  <CafeCarousel />
+</View> 
         </View>
+        
       </ScrollView>
-
       <View style={styles.fabContainer}>
         <AIBot />
       </View>
@@ -52,11 +62,11 @@ export default function HomeScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   container: {
-    paddingBottom: 40,
+    paddingBottom: 4,
   },
   inner: {
     alignItems: 'center',
-    paddingHorizontal: 20, // ✅ estää tekstin katkeamisen
+    paddingHorizontal: 20, 
     marginTop: 20,
   },
   heading: {
@@ -78,5 +88,10 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 20,
     right: 20,
+  },
+  section: {
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    marginBottom: 20,
   },
 });

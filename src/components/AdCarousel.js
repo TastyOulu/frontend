@@ -23,8 +23,8 @@ const AdCarousel = () => {
   return (
     <Carousel
       loop
-      width={width} // <-- tämä on pakollinen!
-      height={260}  // <-- määrittele myös korkeus
+      width={width} 
+      height={260} 
       autoPlay
       data={ads}
       scrollAnimationDuration={1000}
@@ -50,14 +50,11 @@ const AdCarousel = () => {
 const styles = StyleSheet.create({
   card: {
     width: width - 70,
-    //margin:20,
-    //overflow: 'hidden',
     backgroundColor: '#fff',
     height:height/4,
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius:20,
-    marginBottom: 20,
     marginTop: 20,
     
   },

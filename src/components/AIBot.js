@@ -17,6 +17,7 @@ export default function AIBot() {
     const [username, setUsername] = useState('');
     const [avatarUri, setAvatarUri] = useState('');
     const [error, setError] = useState(null);
+    
 
     useEffect(() => {
         setMessages([
@@ -51,7 +52,7 @@ export default function AIBot() {
             setUsername(response.data?.username || 'User');
             setAvatarUri(response.data?.avatar || 'https://cdn0.iconfinder.com/data/icons/phosphor-regular-vol-4/256/robot-512.png');
         } catch (error) {
-            console.error('Error fetching user data:', error);
+            console.log('Error fetching user data:', error);
         }
     };
 
@@ -59,24 +60,23 @@ export default function AIBot() {
         try {
             const token = await SecureStore.getItemAsync('userToken');
             const REACT_APP_API_URL = Constants.expoConfig?.extra?.REACT_APP_API_URL;
-
+    
             if (!token) {
-                console.error('No token found');
-                return "I'm sorry, I can't help you with that right now.";
-            } else {
-                console.log('Token exists');
+                console.log('No token found');
+                const loginErrorMessage = t('ui_chatbot_login_required');
+                setError(loginErrorMessage);
+                return loginErrorMessage;
             }
-
+    
             const response = await axios.get(`${REACT_APP_API_URL}/askai/${encodeURIComponent(message)}`, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                 },
             });
 
-            console.log('AI:', response.data.response);
             return response.data.response;
         } catch (error) {
-            console.error('Error fetching AI response:', error);
+            console.log('Error fetching AI response:', error);
             setError(t('ui_chatbot_error'));
             return t('ui_chatbot_error');
         }

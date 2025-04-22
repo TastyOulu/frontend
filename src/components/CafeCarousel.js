@@ -7,7 +7,7 @@ import axios from 'axios';
 const { height, width } = Dimensions.get('window');
 const API_KEY = Constants.expoConfig?.extra?.googlePlacesApiKey;
 
-const Top5Carousel = () => {
+const CafeCarousel = () => {
   const [ads, setAds] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -15,7 +15,7 @@ const Top5Carousel = () => {
     const fetchRestaurants = async () => {
       try {
         const response = await axios.get(
-          `https://maps.googleapis.com/maps/api/place/textsearch/json?query=ravintola+Oulu&key=${API_KEY}`
+          `https://maps.googleapis.com/maps/api/place/textsearch/json?query=kahvila+Oulu&key=${API_KEY}`
         );
         const data = response.data;
         const top5 = data.results.slice(0, 5).map((place) => ({
@@ -74,6 +74,7 @@ const Top5Carousel = () => {
           </View>
         </View>
       )}
+      style={{ marginBottom: 100 }}
     />
   );
 };
@@ -130,4 +131,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default Top5Carousel;
+export default CafeCarousel;

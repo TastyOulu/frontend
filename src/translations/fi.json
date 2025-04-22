@@ -5,6 +5,7 @@
   "ui_here": "tästä",
   "ui_best_offers": "Kuukauden parhaat tarjoukset:",
   "ui_top_5": "Top 5 ravintolat",
+  "ui_cafe": "Kahvilat Oulussa",
 
   "// ProfileScreen": "",
   "ui_profile_title": "Oma profiili",
@@ -122,6 +123,7 @@
   "ui_chatbot_hey": "Hei! Olen tekoälyavustajasi. Miten voin auttaa sinua tänään?",
   "ui_chatbot_placeholder": "Kirjoita viesti...",
   "ui_chatbot_error": "Olen pahoillani, mutta en voi auttaa sinua juuri nyt.",
+  "ui_chatbot_login_required": "Ole hyvä ja kirjaudu sisään käyttääksesi chattia.",
 
   "//DRAWER": "",
   "ui.drawer.home": "Etusivu",
