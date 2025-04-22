@@ -126,7 +126,7 @@ const ReviewScreen = () => {
               restaurantId: r.restaurantId,
               userId: r.userId,
               date: reviewDate,
-              createdAt: r.createdAt, // Keep the original createdAt for sorting
+              createdAt: r.createdAt,
               upVotes: Array.isArray(r.likes) ? r.likes.length : 0,
               downVotes: 0,
               userVote: Array.isArray(r.likes) && r.likes.some(like => like.username === username) ? 'up' : null,
@@ -698,7 +698,7 @@ const styles = StyleSheet.create({
     marginRight: 10,
     marginBottom: 8,
     alignSelf: 'flex-start',
-    backgroundColor: '#ddd',
+    backgroundColor: '#f0f0f0',
     borderWidth: 1,
     borderColor: '#ddd',
   },

@@ -5,6 +5,7 @@
     "ui_here": "här",
     "ui_best_offers": "Månadens bästa erbjudanden:",
     "ui_top_5": "Topp 5 restauranger",
+    "ui_cafe": "Caféer i Uleåborg",
   
     "// ProfileScreen": "",
     "ui_profile_title": "Min profil",
@@ -119,6 +120,7 @@
     "ui_chatbot_hey": "Hallå där! Jag är din AI-assistent. Hur kan jag hjälpa dig idag?",
     "ui_chatbot_placeholder": "Skriv ett meddelande...",
     "ui_chatbot_error": "Jag är ledsen, men jag kan inte hjälpa dig med det just nu.",
+    "ui_chatbot_login_required": "Var snäll och logga in för att använda chatten.",
 
     "//DRAWER": "",
     "ui.drawer.home": "Startsida",
