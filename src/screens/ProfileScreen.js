@@ -23,13 +23,12 @@ export default function ProfileScreen({ navigation }) {
     const [isCheckingAuth, setIsCheckingAuth] = useState(true);
     const [isUsernameModalVisible, setUsernameModalVisible] = useState(false);
     const [isPasswordModalVisible, setPasswordModalVisible] = useState(false);
-    const [newUsername, setNewUsername] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [oldPassword, setOldPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
 
     const toggleShowPassword = () => setShowPassword(!showPassword);
-    const { user, setUser, logout, deleteAccount } = useContext(AuthContext);
+    const { user, setUser, logout, deleteAccount, newUsername, setNewUsername, handleChangeUsername } = useContext(AuthContext);
     const REACT_APP_API_URL = Constants.expoConfig?.extra?.REACT_APP_API_URL;
 
     const fetchUserAvatar = useCallback(async () => {
@@ -216,39 +215,35 @@ export default function ProfileScreen({ navigation }) {
                     ],
                   );
                 };
-                    
 
-                
-    const handleDeleteAccount = async () => {
-        Alert.alert(
-            "Delete Account",
-            "Are you sure you want to delete your account? All your data will be lost.",
-            [
-                {
-                    text: "Cancel",
-                    style: "cancel"
-                },
-                {
-                    text: "Delete Account",
-                    style: "destructive",
-                    onPress: async () => {
-                        try {
-                            await deleteAccount()
-                            Alert.alert("Success", "Your account has been deleted.")
-                            navigation.reset({
-                                index: 0,
-                                routes: [{ name: 'DrawerRoot' }],
-                            });
-                        } catch (error) {
-                            Alert.alert("Error", "Failed to delete account.")
-                            console.error("Failed to delete account:", error)
-                            navigation.navigate('Main')
-                        }
-                    },
-                },
-            ],
-        );
-    };
+                const handleDeleteAccount = async () => {
+                    Alert.alert(
+                        "Delete Account",
+                        "Are you sure you want to delete your account? All your data will be lost.",
+                        [
+                            {
+                                text: "Cancel",
+                                style: "cancel"
+                            },
+                            {
+                                text: "Delete Account",
+                                style: "destructive",
+                                onPress: async () => {
+                                    try {
+                                        await deleteAccount(email);
+                                        navigation.reset({
+                                            index: 0,
+                                            routes: [{ name: 'DrawerRoot' }],
+                                        });
+                                    } catch (error) {
+                                        console.error("Failed to delete account:", error)
+                                    }
+                                },
+                            },
+                        ],
+                    );
+                };
+
 
     return (
         <GradientBackground statusBarStyle="dark">
@@ -379,16 +374,16 @@ export default function ProfileScreen({ navigation }) {
                             <View style={{backgroundColor:'white',padding:20,borderRadius:10,width:'80%',alignItems:'center'}}>
                                 <Text style={{fontSize:26,fontWeight:'bold',marginBottom:20,textAlign:'center'}}>Change Username</Text>
                                 <TextInput
-                                    placeholder="Enter your email"
-                                    value={email}
+                                    placeholder="Enter your new username"
+                                    value={newUsername} 
                                     onChangeText={setNewUsername}
                                     style={{borderWidth: 1,borderColor: '#ccc',borderRadius: 10,padding: 10,marginBottom: 20,width:200}}
                                 />
-                                
+
                                 <View style={{flexDirection:'column',alignItems:'center',width:'100%'}}>
                                     <Pressable style={{width:'100%',backgroundColor:'#6200EA',borderRadius:30,paddingVertical: 12,
                                             paddingHorizontal: 32,marginTop: 20}} onPress={() => {
-                                        console.log("New username submitted:", newUsername)
+                                        handleChangeUsername();
                                         setUsernameModalVisible(false);
                                     }}>
                                         <Text style={{textAlign:'center',color:'white'}}>Confirm new username</Text>
