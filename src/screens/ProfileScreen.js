@@ -13,6 +13,7 @@ import { ScrollView } from "react-native-gesture-handler";
 import PasswordInput  from "../components/PasswordInput";
 import { CommonActions } from "@react-navigation/native";
 import { useFocusEffect } from "@react-navigation/native";
+import { useTranslation } from 'react-i18next';
 
 export default function ProfileScreen({ navigation }) {
     const [avatarUri, setAvatarUri] = useState('')
@@ -20,7 +21,7 @@ export default function ProfileScreen({ navigation }) {
     const [username, setUsername] = useState('')
     const [email, setEmail] = useState('')
     const [createdAt, setCreatedAt] = useState('')
-    const [score, setScore] = useState(0); // Assuming score is part of the user data
+    const [score, setScore] = useState(0);
     const [showSettings, setShowSettings] = useState(false)
     const [isCheckingAuth, setIsCheckingAuth] = useState(true);
     const [isUsernameModalVisible, setUsernameModalVisible] = useState(false);
@@ -32,6 +33,7 @@ export default function ProfileScreen({ navigation }) {
     const toggleShowPassword = () => setShowPassword(!showPassword);
     const { user, setUser, logout, deleteAccount, newUsername, setNewUsername, handleChangeUsername } = useContext(AuthContext);
     const REACT_APP_API_URL = Constants.expoConfig?.extra?.REACT_APP_API_URL;
+    const { t } = useTranslation();
 
     const fetchUserAvatar = useCallback(async () => {
         try {
@@ -83,13 +85,13 @@ export default function ProfileScreen({ navigation }) {
             const rawDate = response.data?.createdAt;
             const createdAt = rawDate ? new Date(rawDate).toLocaleDateString('fi-FI') : 'Not found';
             let avatar = response.data?.avatar;
-            const score = response.data?.score || 0; // Assuming score is part of the user data
+            const score = response.data?.score || 0;
 
             if (name && email) {
                 setUsername(name);
                 setEmail(email);
                 setCreatedAt(createdAt);
-                setScore(score); // Set the score in the state
+                setScore(score);
 
                 if (avatar === 'ok') {
                     await fetchUserAvatar();
@@ -109,7 +111,7 @@ export default function ProfileScreen({ navigation }) {
             setCreatedAt('Not found');
             setAvatarUri('');
             setAvatarSeed('Anonymous');
-            setScore(0); // Reset score if user data fetch fails
+            setScore(0);
         } finally {
             setIsCheckingAuth(false);
         }
@@ -185,8 +187,8 @@ export default function ProfileScreen({ navigation }) {
 
     const handleLogout = async () => {
         Alert.alert(
-            "Log Out",
-            "Are you sure you want to log out?",
+            t('ui_logout'),
+            t('ui_logout_message'),
             [
                 {
                     text: "Cancel",
@@ -226,8 +228,8 @@ export default function ProfileScreen({ navigation }) {
 
                 const handleDeleteAccount = async () => {
                     Alert.alert(
-                        "Delete Account",
-                        "Are you sure you want to delete your account? All your data will be lost.",
+                        t('ui_delete_account'),
+                        t('ui_delete_account_message'),
                         [
                             {
                                 text: "Cancel",
@@ -266,7 +268,7 @@ export default function ProfileScreen({ navigation }) {
                         iconColor={showSettings ? 'white' : 'white'}
                         onPress={() => setShowSettings(!showSettings)}
                     />
-                    <Text style={{fontSize:10,marginTop:-6}}>Settings</Text>
+                    <Text style={{fontSize:10,marginTop:-6}}>{t('ui_settings')}</Text>
                 </View>
                 <View style={{flexDirection:'row',alignItems:'center',flexWrap:'nowrap',marginHorizontal:20}}>
                     <View style={{ position: 'relative' }}>
@@ -313,9 +315,9 @@ export default function ProfileScreen({ navigation }) {
                         />
                     </View>
 
-                    <Text style={{flex:1,fontSize:24,fontWeight:'bold',marginLeft:10,justifyContent:'center'}}>Welcome back {username}!</Text>
+                    <Text style={{flex:1,fontSize:24,fontWeight:'bold',marginLeft:10,justifyContent:'center'}}>{t('ui_welcome_back')} {username}!</Text>
                 </View>
-                <Text style ={{fontSize:20,alignItems:'center',marginHorizontal:34}}>Your score: {score}</Text>
+                <Text style ={{fontSize:20,alignItems:'center',marginHorizontal:34}}>{t('ui_points')}: {score}</Text>
 
                 {/* Show buttons if settings is open */}
                 {showSettings && (
@@ -323,21 +325,21 @@ export default function ProfileScreen({ navigation }) {
                         <View style={{marginTop: 20,alignItems: 'center',marginBottom:20}}>
                             <View style={{marginTop: 20,alignItems: 'center'}}>
                                 <Text style={{fontSize: 24,fontWeight: 'bold',marginBottom: 20}}>{email}</Text>
-                                <Text style={{fontSize: 16,marginBottom: 20,}}>Member since: {createdAt}</Text>
+                                <Text style={{fontSize: 16,marginBottom: 20,}}>{t('ui_member_since')} {createdAt}</Text>
                                 <View style={{alignItems:'center',marginTop: 20,marginBottom: 80}}>
                                     <Pressable
                                         style={{backgroundColor: '#6200EA',alignItems:'center',width:300,borderRadius:30,paddingVertical: 12,
                                             paddingHorizontal: 32,marginTop: 20,shadowColor: 'black',shadowOffset: { width: 0, height: 2 },
                                             shadowOpacity: 0.25,shadowRadius: 3.84,elevation: 10,}}
                                         onPress={() => setUsernameModalVisible(true)}>
-                                        <Text style={{color:'white',fontSize:18}}>Change username</Text>
+                                        <Text style={{color:'white',fontSize:18}}>{t('ui_change_username')}</Text>
                                     </Pressable>
                                     <Pressable
                                         style={{backgroundColor: '#6200EA',alignItems:'center',width:300,borderRadius:30,paddingVertical: 12,
                                             paddingHorizontal: 32,marginTop: 20,shadowColor: 'black',shadowOffset: { width: 0, height: 2 },
                                             shadowOpacity: 0.25,shadowRadius: 3.84,elevation: 10,}}
                                         onPress={() => setPasswordModalVisible(true)}>
-                                        <Text style={{color:'white',fontSize:18}}>Change password</Text>
+                                        <Text style={{color:'white',fontSize:18}}>{t('ui_change_password')}</Text>
                                     </Pressable>
 
 
@@ -353,7 +355,7 @@ export default function ProfileScreen({ navigation }) {
                                         });
                                     }}
                                 >
-                                    <Text style={{color:'white',textAlign:'center',fontSize:18}}>Log out</Text>
+                                    <Text style={{color:'white',textAlign:'center',fontSize:18}}>{t('ui_logout')}</Text>
                                 </Pressable>
 
                                 <Pressable
@@ -363,7 +365,7 @@ export default function ProfileScreen({ navigation }) {
                                         handleDeleteAccount(navigation);
                                     }}
                                 >
-                                    <Text style={{color:'white',textAlign:'center',fontSize:18}}>Delete account</Text>
+                                    <Text style={{color:'white',textAlign:'center',fontSize:18}}>{t('ui_delete_account')}</Text>
                                 </Pressable>
 
                             </View>
@@ -380,9 +382,9 @@ export default function ProfileScreen({ navigation }) {
                     >
                         <View style={{flex:1,backgroundColor:'#E6CCFF',justifyContent:'center',alignItems:'center'}}>
                             <View style={{backgroundColor:'white',padding:20,borderRadius:10,width:'80%',alignItems:'center'}}>
-                                <Text style={{fontSize:26,fontWeight:'bold',marginBottom:20,textAlign:'center'}}>Change Username</Text>
+                                <Text style={{fontSize:26,fontWeight:'bold',marginBottom:20,textAlign:'center'}}>{t('ui_change_username')}</Text>
                                 <TextInput
-                                    placeholder="Enter your new username"
+                                    placeholder={t('ui_enter_new_username')}
                                     value={newUsername} 
                                     onChangeText={setNewUsername}
                                     style={{borderWidth: 1,borderColor: '#ccc',borderRadius: 10,padding: 10,marginBottom: 20,width:200}}
@@ -394,11 +396,11 @@ export default function ProfileScreen({ navigation }) {
                                         handleChangeUsername();
                                         setUsernameModalVisible(false);
                                     }}>
-                                        <Text style={{textAlign:'center',color:'white'}}>Confirm new username</Text>
+                                        <Text style={{textAlign:'center',color:'white'}}>{t('ui_confirm_new_password')}</Text>
                                     </Pressable>
                                     <Pressable style={{width:'100%',backgroundColor:'red',borderRadius:30,paddingVertical: 12,
                                             paddingHorizontal: 32,marginTop: 20}} onPress={() => setUsernameModalVisible(false)}>
-                                        <Text style={{textAlign:'center',color:'white'}}>Cancel</Text>
+                                        <Text style={{textAlign:'center',color:'white'}}>{t('ui_cancel')}</Text>
                                     </Pressable>
                                 </View>
                             </View>
@@ -414,12 +416,11 @@ export default function ProfileScreen({ navigation }) {
                     >
                         <View style={{flex:1,backgroundColor:'#E6CCFF',justifyContent:'center',alignItems:'center'}}>
                             <View style={{backgroundColor:'white',padding:20,borderRadius:10,width:'80%',alignItems:'center'}}>
-                                <Text style={{fontSize:26,fontWeight:'bold',marginBottom:20,textAlign:'center'}}>Change Password</Text>
+                                <Text style={{fontSize:26,fontWeight:'bold',marginBottom:20,textAlign:'center'}}>{t('ui_change_password')}</Text>
                                 <TextInput
-                                    placeholder="Enter your email"
-                                    value={email}
-                                    onChangeText={setEmail}
-                                    left={<TextInput.Icon icon="email" />}
+                                    placeholder={t('ui_email')}
+                                    value={oldPassword}
+                                    onChangeText={setOldPassword}
                                     style={{borderWidth: 1,borderColor: '#ccc',borderRadius: 10,padding: 10,marginBottom: 20,width:'100%'}}
                                 />
                                 <PasswordInput
@@ -427,13 +428,13 @@ export default function ProfileScreen({ navigation }) {
                                     onChangeText={setOldPassword}
                                     showPassword={showPassword}
                                     toggleShowPassword={toggleShowPassword}
-                                    placeholder="Enter old password"
+                                    placeholder={t('ui_enter_current_password')}
                                     secureTextEntry
                                     style={{borderWidth: 1,borderColor: '#ccc',borderRadius: 10,padding: 10,marginBottom: 20,width:200}}
                                 />
                                  <PasswordInput 
                                     value={newPassword}
-                                    placeholder="Enter new password"
+                                    placeholder={t('ui_enter_new_password')}
                                     showPassword={showPassword}
                                     toggleShowPassword={toggleShowPassword}
                                     onChangeText={setNewPassword}
@@ -460,11 +461,11 @@ export default function ProfileScreen({ navigation }) {
                                                 }
                                         
                                     }}>
-                                        <Text style={{textAlign:'center',color:'white'}}>Confirm new password</Text>
+                                        <Text style={{textAlign:'center',color:'white'}}>{t('ui_confirm_new_password')}</Text>
                                     </Pressable>
                                     <Pressable style={{width:'100%',backgroundColor:'red',borderRadius:30,paddingVertical: 12,
                                             paddingHorizontal: 32,marginTop: 20}} onPress={() => setPasswordModalVisible(false)}>
-                                        <Text style={{textAlign:'center',color:'white'}}>Cancel</Text>
+                                        <Text style={{textAlign:'center',color:'white'}}>{t('ui_cancel')}</Text>
                                     </Pressable>
                                 </View>
                             </View>
